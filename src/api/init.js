@@ -1,7 +1,9 @@
 import { yarn } from '../util';
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { spawnChildProcess } from '../util';
+import { spawnChildProcess, findRepository, findPackage, sortObject } from '../util';
+import add from './add';
+const path = require('path');
 
 export default async function init(prompt, git, nvmVersion, dotenv, envrc) {
   if (prompt) {
@@ -9,6 +11,32 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc) {
   } else {
     await yarn('init -y');
   }
+
+  const {repo, repoPath} = await findRepository();
+  const {pack, packPath} = await findPackage();
+  if (!repo.projects) {
+    repo.projects = {};
+  }
+  if (repo.projects[pack.name]) {
+    await fs.unlink(packPath);
+    throw Error(`Cannot init project "${pack.name}", project already exists.`);
+  }
+  const projectDirs = packPath.split('/');
+  projectDirs.pop();
+  const projectPath = path.join(...projectDirs);
+  let gitRepo = false;
+  if (pack.repository && pack.repository.url) {
+    gitRepo = pack.repository.url;
+  }
+  repo.projects[pack.name] = {
+    language: 'javascript',
+    local_path: projectPath,
+    git_repository: gitRepo,
+    dependencies: {},
+    local_dependencies: {}
+  };
+  repo.projects = sortObject(repo.projects);
+  await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
   
   if (git) {
     await spawnChildProcess('git', ['init']);
@@ -21,7 +49,7 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc) {
     }
     await fs.writeFile('./.gitignore', gitignore);
 
-    await yarn('add --dev @commitlint/cli @commitlint/config-conventional cz-conventional-changelog git-cz husky');
+    await add(['@commitlint/cli', '@commitlint/config-conventional', 'cz-conventional-changelog', 'git-cz', 'husky'], true);
     const pack = JSON.parse(await fs.readFile('./package.json'));
     pack.scripts = {
       commit: 'git-cz'

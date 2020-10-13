@@ -1,6 +1,6 @@
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { findRepository, findPackage, yarn } from '../util';
+import { findRepository, findPackage, yarn, sortObject, fallback } from '../util';
 
 export default async function add(dependencies, dev = false) {
   const {repo, repoPath} = await findRepository();
@@ -20,18 +20,12 @@ export default async function add(dependencies, dev = false) {
 
   ({pack, packPath} = await findPackage());
   projectDetails.dependencies = Object.assign(
-    pack.dependencies, 
-    pack.devDependencies, 
-    pack.bundledDependencies
+    fallback(pack.dependencies, {}), 
+    fallback(pack.devDependencies, {}), 
+    fallback(pack.bundledDependencies, {})
   );
 
-  const newDependencies = {};
-  Object.keys(projectDetails.dependencies)
-    .sort()
-    .forEach(function(v) {
-      newDependencies[v] = projectDetails.dependencies[v];
-    });
-  projectDetails.dependencies = newDependencies;
+  projectDetails.dependencies = sortObject(projectDetails.dependencies);
   repo.projects[projectName] = projectDetails;
   await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
 }
