@@ -1,5 +1,6 @@
 import { findRepository } from '../util';
 import add from './add';
+import remove from './remove';
 
 export default async function local(projects, dev, nextCdm) {
   const {repo, repoPath} = await findRepository();
@@ -18,16 +19,15 @@ export default async function local(projects, dev, nextCdm) {
     }
   });
 
-  const deps = [];
-  projects.map(function(p) {
-    const projectPath = repo.projects[p].local_path;
-    deps.push(`file:${projectPath}`);
-  });
-
   if (nextCdm === 'add') {
+    const deps = [];
+    projects.map(function(p) {
+      const projectPath = repo.projects[p].local_path;
+      deps.push(`file:${projectPath}`);
+    });
     await add(deps, dev);
   } else if (nextCdm === 'remove') {
-    throw Error('remove command not yet supported');
+    await remove(projects);
   } else {
     throw Error('local command must be followed by either "add" or "remove"');
   }

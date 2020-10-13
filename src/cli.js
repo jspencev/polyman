@@ -1,4 +1,4 @@
-import { init, add, local } from './api';
+import { init, add, local, remove } from './api';
 import { yarn } from './util';
 const inquirer = require('inquirer');
 
@@ -14,6 +14,11 @@ async function cli() {
       yargs.positional('cmd', {
         description: 'Action to take. "add" or "remove"'
       })
+      yargs.positional('dependency', {
+        description: 'Project to add as dependency'
+      })
+    })
+    .command('remove [dependency...]', 'Remove dependency(ies) to your project', function(yargs) {
       yargs.positional('dependency', {
         description: 'Project to add as dependency'
       })
@@ -76,6 +81,8 @@ async function cli() {
     await add(argv.dependency, argv.dev);
   } else if (command === 'local') {
     await local(argv.dependency, argv.dev, argv.cmd);
+  } else if (command === 'remove') {
+    await remove(argv.dependency);
   } else {
     await yarn(argv._);
   }
