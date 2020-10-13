@@ -2,8 +2,8 @@ import { findRepository } from '../util';
 import add from './add';
 import remove from './remove';
 
-export default async function local(projects, dev, nextCdm) {
-  const {repo, repoPath} = await findRepository();
+export default async function local(projects, dev, nextCdm, cwd) {
+  const {repo} = await findRepository(cwd);
   projects.map(function(project) {
     const projectDetails = repo.projects[project]
     if (!projectDetails) {
@@ -25,9 +25,9 @@ export default async function local(projects, dev, nextCdm) {
       const projectPath = repo.projects[p].local_path;
       deps.push(`file:${projectPath}`);
     });
-    await add(deps, dev);
+    await add(deps, dev, cwd);
   } else if (nextCdm === 'remove') {
-    await remove(projects);
+    await remove(projects, cwd);
   } else {
     throw Error('local command must be followed by either "add" or "remove"');
   }

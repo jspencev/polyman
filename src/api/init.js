@@ -5,15 +5,15 @@ import { spawnChildProcess, findRepository, findPackage, sortObject } from '../u
 import add from './add';
 const path = require('path');
 
-export default async function init(prompt, git, nvmVersion, dotenv, envrc) {
+export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) {
   if (prompt) {
     await yarn('init');
   } else {
     await yarn('init -y');
   }
 
-  const {repo, repoPath} = await findRepository();
-  const {pack, packPath} = await findPackage();
+  const {repo, repoPath} = await findRepository(cwd);
+  const {pack, packPath} = await findPackage(cwd);
   if (!repo.projects) {
     repo.projects = {};
   }
@@ -21,9 +21,7 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc) {
     await fs.unlink(packPath);
     throw Error(`Cannot init project "${pack.name}", project already exists.`);
   }
-  const projectDirs = packPath.split('/');
-  projectDirs.pop();
-  const projectPath = path.join(...projectDirs);
+  const projectPath = path.join(packPath, '..');
   let gitRepo = false;
   if (pack.repository && pack.repository.url) {
     gitRepo = pack.repository.url;

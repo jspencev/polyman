@@ -1,4 +1,4 @@
-import { init, add, local, remove } from './api';
+import { init, add, local, remove, bootstrap } from './api';
 import { yarn } from './util';
 const inquirer = require('inquirer');
 
@@ -23,6 +23,7 @@ async function cli() {
         description: 'Project to add as dependency'
       })
     })
+    .command('bootstrap', 'Relink all dependencies')
     .option('dev', {
       alias: 'd',
       type: 'boolean',
@@ -83,6 +84,8 @@ async function cli() {
     await local(argv.dependency, argv.dev, argv.cmd);
   } else if (command === 'remove') {
     await remove(argv.dependency);
+  } else if (command === 'bootstrap') {
+    await bootstrap();
   } else {
     await yarn(argv._);
   }

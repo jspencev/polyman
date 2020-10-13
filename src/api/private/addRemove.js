@@ -2,9 +2,9 @@ const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 import { findRepository, findPackage, yarn, sortObject, fallback, delay } from '../../util';
 
-export default async function addRemove(dependencies, dev, type) {
-  const {repo, repoPath} = await findRepository();
-  let {pack, packPath} = await findPackage();
+export default async function addRemove(dependencies, dev, type, cwd) {
+  const {repo, repoPath} = await findRepository(cwd);
+  let {pack, packPath} = await findPackage(cwd);
   const projectName = pack.name;
   const projectDetails = repo.projects[projectName];
   if (!projectDetails) {
@@ -24,9 +24,9 @@ export default async function addRemove(dependencies, dev, type) {
   }
 
   yarnCmd = yarnCmd.concat(...dependencies);
-  await yarn(yarnCmd);
+  await yarn(yarnCmd, cwd);
 
-  ({pack, packPath} = await findPackage());
+  ({pack, packPath} = await findPackage(cwd));
   let newDeps = Object.assign(
     {},
     fallback(pack.dependencies, {}), 
@@ -41,7 +41,6 @@ export default async function addRemove(dependencies, dev, type) {
   Object.keys(newDeps).map(function(dep) {
     const depVal = newDeps[dep];
     if (repo.projects[dep] && depVal.includes('file:')) {
-      console.log(dep);
       if (dependencies.includes(dep)) {
         if (dev) {
           localDevDeps[dep] = depVal;

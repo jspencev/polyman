@@ -2,8 +2,7 @@ const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 import findFileUpPath from './findFileUpPath';
 
-export default async function findRepository() {
-  const cwd = process.cwd();
+export default async function findRepository(cwd = process.cwd()) {
   const filePath = await findFileUpPath(cwd, 'repository.polyman');
 
   if (!filePath) {
