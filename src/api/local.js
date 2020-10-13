@@ -23,7 +23,7 @@ export default async function local(projects, dev, nextCdm, cwd) {
     const deps = [];
     projects.map(function(p) {
       const projectPath = repo.projects[p].local_path;
-      deps.push(`file:${projectPath}`);
+      deps.push(`@${repo.name}/${p}@file:${projectPath}`);
     });
     await add(deps, dev, cwd);
   } else if (nextCdm === 'remove') {

@@ -1,12 +1,13 @@
 {
   "name": "polyman",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Run a monorepo as a polyrepo",
   "main": "/dist/index.js",
   "author": "John Spence <jspence@carbonpay.app>",
   "license": "MIT",
   "bin": {
-    "polyman": "bin/polyman"
+    "polyman": "bin/polyman",
+    "poly": "bin/polyman"
   },
   "scripts": {
     "build": "babel src --out-dir dist",
@@ -43,5 +44,6 @@
     "hooks": {
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
-  }
+  },
+  "peerDependencies": {}
 }

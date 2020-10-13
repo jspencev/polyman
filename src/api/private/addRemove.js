@@ -40,14 +40,9 @@ export default async function addRemove(dependencies, dev, type, cwd) {
   const localDevDeps = {};
   Object.keys(newDeps).map(function(dep) {
     const depVal = newDeps[dep];
-    if (repo.projects[dep] && depVal.includes('file:')) {
-      if (dependencies.includes(dep)) {
-        if (dev) {
-          localDevDeps[dep] = depVal;
-        } else {
-          localDependencies[dep] = depVal;
-        }
-      } else {
+    if (depVal.includes('file:') && dep.includes(`@${repo.name}`)) {
+      const pname = dep.split('/')[1];
+      if (repo.projects[pname]) {
         if (pack.dependencies[dep]) {
           localDependencies[dep] = depVal;
         } else if (pack.devDependencies[dep]) {
