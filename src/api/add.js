@@ -24,8 +24,27 @@ export default async function add(dependencies, dev = false) {
     fallback(pack.devDependencies, {}), 
     fallback(pack.bundledDependencies, {})
   );
-
   projectDetails.dependencies = sortObject(projectDetails.dependencies);
+
+  const newDependencies = {};
+  const localDependencies = {};
+  const localDevDeps = {};
+  Object.keys(projectDetails.dependencies).map(function(dep) {
+    const depVal = projectDetails.dependencies[dep];
+    if (repo.projects[dep] && depVal.includes('file:')) {
+      if (dev) {
+        localDevDeps[dep] = depVal;
+      } else {
+        localDependencies[dep] = depVal;
+      }
+    } else {
+      newDependencies[dep] = depVal;
+    }
+  });
+  projectDetails.dependencies = newDependencies;
+  projectDetails.local_dependencies = localDependencies;
+  projectDetails.local_dev_dependencies = localDevDeps;
+
   repo.projects[projectName] = projectDetails;
   await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
 }

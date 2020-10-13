@@ -33,7 +33,8 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc) {
     local_path: projectPath,
     git_repository: gitRepo,
     dependencies: {},
-    local_dependencies: {}
+    local_dependencies: {},
+    local_dev_dependencies: {}
   };
   repo.projects = sortObject(repo.projects);
   await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
