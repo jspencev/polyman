@@ -1,10 +1,20 @@
-import { init } from './api';
+import { init, add } from './api';
 import { yarn } from './util';
 const inquirer = require('inquirer');
 
 function cli() {
   const argv = require('yargs')
     .command('init', 'Init a project in this directory')
+    .command('add [dependency...]', 'Add dependency(ies) to your project', function(yargs) {
+      yargs.positional('dependency', {
+        description: 'Dependency to add'
+      })
+    })
+    .option('dev', {
+      alias: 'd',
+      type: 'boolean',
+      description: 'Add as dev dependency'
+    })
     .demandCommand()
     .help()
     .argv;
@@ -55,6 +65,10 @@ function cli() {
   
       await init(true, true, nvmVersion, dotenv, envrc);
       console.log('== DONE ==');
+    })();
+  } else if (command === 'add') {
+    (async function() {
+      await add(argv.dependency, argv.dev);
     })();
   } else {
     yarn(argv._);
