@@ -19,15 +19,18 @@ export default async function local(projects, dev, nextCdm, cwd) {
     }
   });
 
+  let deps = [];
   if (nextCdm === 'add') {
-    const deps = [];
     projects.map(function(p) {
       const projectPath = repo.projects[p].local_path;
       deps.push(`@${repo.name}/${p}@file:${projectPath}`);
     });
     await add(deps, dev, cwd);
   } else if (nextCdm === 'remove') {
-    await remove(projects, cwd);
+    projects.map(function(p) {
+      deps.push(`@${repo.name}/${p}`);
+    });
+    await remove(deps, cwd);
   } else {
     throw Error('local command must be followed by either "add" or "remove"');
   }
