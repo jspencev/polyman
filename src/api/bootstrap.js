@@ -1,4 +1,4 @@
-import { findRepository, fallback, yarn } from '../util';
+import { findRepository, fallback, yarn, hashDirectory } from '../util';
 import local from './local';
 
 export default async function bootstrap(dev, cwd) {
@@ -24,12 +24,16 @@ export default async function bootstrap(dev, cwd) {
       if (dev) {
         Object.assign(localDeps, JSON.parse(JSON.stringify(fallback(project.local_dev_dependencies, {}))));
       }
-      Object.keys(localDeps).map(function(dep) {
-        const projectName = dep.split('/')[1];
-        if (repo.projects[projectName].local_path) {
-          toLink.push(projectName);
+      for (const projectName in localDeps) {
+        const localPath = repo.projects[projectName].local_path
+        if (localPath) {
+          const oldHash = localDeps[projectName];
+          const newHash = await hashDirectory(localPath, ['node_modules']);
+          if (oldHash !== newHash) {
+            toLink.push(projectName);
+          }
         }
-      });
+      }
       if (toLink.length > 0) {
         try {
           await local(toLink, dev, 'add', project.local_path);
