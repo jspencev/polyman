@@ -57,8 +57,8 @@ Removes dependencies.
 ## poly build (-f)
 Calls the build command if the directory has new content. --force will force a rebuild.
 
-### poly bootstrap (-a)
-Runs through every local polyman project and relinks all local project dependencies. --all will bootstrap all local projects.
+### poly bootstrap (-a) (-f)
+Runs through every local polyman project and relinks all local project dependencies. --all will bootstrap all local projects. -f will force the builds and links to run.
 
 ### poly ...ANYTHING ELSE...
 All other commands are passed straight through to yarn.

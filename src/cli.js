@@ -95,7 +95,7 @@ async function cli() {
   } else if (command === 'remove') {
     await remove(argv.dependency);
   } else if (command === 'bootstrap') {
-    await bootstrap(argv.all);
+    await bootstrap(argv.all, argv.force);
   } else if (command === 'build') {
     await build(argv.force);
   } else {

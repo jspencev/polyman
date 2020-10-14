@@ -3,7 +3,7 @@ import local from './local';
 import build from './build';
 const path = require('path');
 
-export default async function bootstrap(all, cwd) {
+export default async function bootstrap(all, force, cwd) {
   const {repo} = await findRepository(cwd);
   let packPath
   try {
@@ -28,7 +28,7 @@ export default async function bootstrap(all, cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       try {
-        await build(false, project.local_path);
+        await build(force, project.local_path);
       } catch (e) {
         throw Error(`Project "${projectName}": build failed`);
       }
@@ -39,21 +39,27 @@ export default async function bootstrap(all, cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       const {localDeps, localDevDeps} = getDeps(project);
-      await runLink(project, projectName, localDeps, repo, false);
-      await runLink(project, projectName, localDevDeps, repo, true);
+      await runLink(project, projectName, localDeps, repo, false, force);
+      await runLink(project, projectName, localDevDeps, repo, true, force);
     }
   }
 }
 
-async function runLink(project, projectName, deps, repo, dev) {
+async function runLink(project, projectName, deps, repo, dev, force) {
   const toLink = [];
   for (const projectName in deps) {
     const localPath = repo.projects[projectName].local_path
     if (localPath) {
-      const oldHash = deps[projectName];
-      const newHash = await hashDirectory(localPath, ['node_modules']);
-      if (oldHash !== newHash) {
+      if (force) {
         toLink.push(projectName);
+      } else {
+        const oldHash = deps[projectName];
+        const newHash = await hashDirectory(localPath, ['node_modules']);
+        if (oldHash !== newHash) {
+          toLink.push(projectName);
+        } else {
+          console.log(`Skipping link for "${projectName}": links are already up to date.`);
+        }
       }
     }
   }
