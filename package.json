@@ -1,6 +1,6 @@
 {
   "name": "polyman",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Run a monorepo as a polyrepo",
   "main": "/dist/index.js",
   "author": "John Spence <jspence@carbonpay.app>",
