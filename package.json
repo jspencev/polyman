@@ -5,6 +5,10 @@
   "main": "/dist/index.js",
   "author": "John Spence <jspence@carbonpay.app>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jspencev/polyman"
+  },
   "bin": {
     "polyman": "bin/polyman",
     "poly": "bin/polyman"
