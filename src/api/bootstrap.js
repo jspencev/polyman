@@ -65,6 +65,7 @@ async function runLink(project, projectName, deps, repo, dev, force) {
   }
   if (toLink.length > 0) {
     try {
+      await local(toLink, dev, 'remove', project.local_path);
       await local(toLink, dev, 'add', project.local_path);
     } catch (e) {
       throw Error(`The project "${projectName}" does not exist at path "${project.local_path}"`);
