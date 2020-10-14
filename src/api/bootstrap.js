@@ -2,7 +2,7 @@ import { findRepository, fallback } from '../util';
 import local from './local';
 
 export default async function bootstrap(dev, cwd) {
-  const {repo} = await findRepository();
+  const {repo} = await findRepository(cwd);
   const projectNames = Object.keys(repo.projects);
   for (let i = 0; i < projectNames.length; i++) {
     const project = repo.projects[projectNames[i]];
@@ -13,12 +13,17 @@ export default async function bootstrap(dev, cwd) {
         Object.assign(localDeps, JSON.parse(JSON.stringify(project.local_dev_dependencies)));
       }
       Object.keys(localDeps).map(function(dep) {
-        if (repo.projects[dep].local_path) {
-          toLink.push(dep);
+        const projectName = dep.split('/')[1];
+        if (repo.projects[projectName].local_path) {
+          toLink.push(projectName);
         }
       });
       if (toLink.length > 0) {
-        await local(toLink, dev, 'add', project.local_path);
+        try {
+          await local(toLink, dev, 'add', project.local_path);
+        } catch (e) {
+          throw Error(`The project "${projectNames[i]}" does not exist at path "${project.local_path}"`);
+        }
       }
     }
   }

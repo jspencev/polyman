@@ -1,6 +1,6 @@
 {
   "name": "polyman",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Run a monorepo as a polyrepo",
   "main": "/dist/index.js",
   "author": "John Spence <jspence@carbonpay.app>",
@@ -12,7 +12,8 @@
   "scripts": {
     "build": "babel src --out-dir dist",
     "commit": "git-cz",
-    "addGlobal": "node addGlobal"
+    "addGlobal": "node addGlobal",
+    "test": "echo No test file\n"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",

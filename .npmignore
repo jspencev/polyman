@@ -1,0 +1,10 @@
+/node_modules
+/src
+/.env
+/.envrc
+/addGlobal.js
+/babel.config.js
+/commitlint.config.js
+/jsconfig.json
+/yarn-error.log
+/yarn.lock
