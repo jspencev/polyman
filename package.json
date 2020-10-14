@@ -1,10 +1,14 @@
 {
   "name": "polyman",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Run a monorepo as a polyrepo",
   "main": "/dist/index.js",
   "author": "John Spence <jspence@carbonpay.app>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jspencev/polyman"
+  },
   "bin": {
     "polyman": "bin/polyman",
     "poly": "bin/polyman"
