@@ -1,5 +1,6 @@
-import { findRepository, findPackage, fallback, yarn, hashDirectory } from '../util';
+import { findRepository, findPackage, fallback, yarn, hashDirectory, findProjectByLocalPath } from '../util';
 import local from './local';
+import build from './build';
 const path = require('path');
 
 export default async function bootstrap(all, cwd) {
@@ -15,18 +16,8 @@ export default async function bootstrap(all, cwd) {
   let projectNames = Object.keys(repo.projects);
 
   if (!all) {
-    let projectName;
-    let project;
     const projectDir = path.parse(packPath).dir;
-    for (const pname of projectNames) {
-      const p = repo.projects[pname];
-      if (p.local_path === projectDir) {
-        project = p;
-        projectName = pname;
-        break;
-      }
-    }
-
+    const {projectName, project} = findProjectByLocalPath(repo, projectDir);
     let seen = {};
     seen[projectName] = true;
     seen = findMyDeps(seen, project, repo);
@@ -37,7 +28,7 @@ export default async function bootstrap(all, cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       try {
-        await yarn('build', project.local_path);
+        await build(false, project.local_path);
       } catch (e) {
         throw Error(`Project "${projectName}": build failed`);
       }

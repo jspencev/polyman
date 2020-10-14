@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap } from './api';
+import { init, add, local, remove, bootstrap, build } from './api';
 import { yarn } from './util';
 const inquirer = require('inquirer');
 
@@ -23,16 +23,22 @@ async function cli() {
         description: 'Project to add as dependency'
       })
     })
-    .command('bootstrap', 'Relink all dependencies')
+    .command('bootstrap', 'Relink dependencies. --all relinks every project.')
+    .command('build', 'Build the current project. --force forces a rebuild.')
+    .option('all', {
+      alias: 'a',
+      type: 'boolean',
+      description: 'All projects'
+    })
     .option('dev', {
       alias: 'd',
       type: 'boolean',
       description: 'Add as dev dependency'
     })
-    .option('all', {
-      alias: 'a',
+    .option('force', {
+      alias: '-f',
       type: 'boolean',
-      description: 'Bootstrap only current project.'
+      description: 'Force'
     })
     .demandCommand()
     .help()
@@ -82,7 +88,6 @@ async function cli() {
     }
 
     await init(true, true, nvmVersion, dotenv, envrc);
-    console.log('== DONE ==');
   } else if (command === 'add') {
     await add(argv.dependency, argv.dev);
   } else if (command === 'local') {
@@ -91,9 +96,13 @@ async function cli() {
     await remove(argv.dependency);
   } else if (command === 'bootstrap') {
     await bootstrap(argv.all);
+  } else if (command === 'build') {
+    await build(argv.force);
   } else {
     await yarn(argv._);
   }
+
+  console.log('== DONE ==');
 }
 
 module.exports = cli;
