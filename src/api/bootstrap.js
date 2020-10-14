@@ -1,16 +1,28 @@
-import { findRepository, fallback } from '../util';
+import { findRepository, fallback, yarn } from '../util';
 import local from './local';
 
 export default async function bootstrap(dev, cwd) {
   const {repo} = await findRepository(cwd);
   const projectNames = Object.keys(repo.projects);
   for (let i = 0; i < projectNames.length; i++) {
+    const projectName = projectNames[i];
+    const projectDetails  = repo.projects[projectName];
+    if (projectDetails.local_path) {
+      try {
+        await yarn('build', projectDetails.local_path);
+      } catch (e) {
+        throw Error(`Project "${projectName}": build failed`);
+      }
+    }
+  }
+
+  for (let i = 0; i < projectNames.length; i++) {
     const project = repo.projects[projectNames[i]];
     if (project.local_path) {
       const toLink = [];
-      const localDeps = Object.assign({}, JSON.parse(JSON.stringify(project.local_dependencies)));
+      const localDeps = JSON.parse(JSON.stringify(fallback(project.local_dependencies, {})));
       if (dev) {
-        Object.assign(localDeps, JSON.parse(JSON.stringify(project.local_dev_dependencies)));
+        Object.assign(localDeps, JSON.parse(JSON.stringify(fallback(project.local_dev_dependencies, {}))));
       }
       Object.keys(localDeps).map(function(dep) {
         const projectName = dep.split('/')[1];
