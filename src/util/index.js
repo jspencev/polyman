@@ -3,7 +3,9 @@ import doesExist from './doesExist';
 import fallback from './fallback';
 import findFileUpPath from './findFileUpPath';
 import findPackage from './findPackage';
+import findProjectByLocalPath from './findProjectByLocalPath';
 import findRepository from './findRepository';
+import hashDirectory from './hashDirectory';
 import sortObject from './sortObject';
 import spawnChildProcess from './spawnChildProcess';
 import yarn from './yarn';
@@ -14,7 +16,9 @@ export {
   fallback,
   findFileUpPath,
   findPackage,
+  findProjectByLocalPath,
   findRepository,
+  hashDirectory,
   sortObject,
   spawnChildProcess,
   yarn

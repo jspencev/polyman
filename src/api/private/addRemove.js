@@ -1,6 +1,6 @@
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { findRepository, findPackage, yarn, sortObject, fallback } from '../../util';
+import { findRepository, findPackage, yarn, sortObject, fallback, hashDirectory } from '../../util';
 
 export default async function addRemove(dependencies, dev, type, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
@@ -38,21 +38,22 @@ export default async function addRemove(dependencies, dev, type, cwd) {
   const newDependencies = {};
   const localDependencies = {};
   const localDevDeps = {};
-  Object.keys(newDeps).map(function(dep) {
+  for (const dep in newDeps) {
     const depVal = newDeps[dep];
     if (depVal.includes('file:') && dep.includes(`@${repo.name}`)) {
       const pname = dep.split('/')[1];
       if (repo.projects[pname]) {
+        const hash = await hashDirectory(repo.projects[pname].local_path, ['node_modules']);
         if (pack.dependencies[dep]) {
-          localDependencies[dep] = depVal;
+          localDependencies[pname] = hash;
         } else if (pack.devDependencies[dep]) {
-          localDevDeps[dep] = depVal;
+          localDevDeps[pname] = hash;
         }
       }
     } else {
       newDependencies[dep] = depVal;
     }
-  });
+  }
   projectDetails.dependencies = newDependencies;
   projectDetails.local_dependencies = localDependencies;
   projectDetails.local_dev_dependencies = localDevDeps;
