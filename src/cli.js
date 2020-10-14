@@ -29,6 +29,11 @@ async function cli() {
       type: 'boolean',
       description: 'Add as dev dependency'
     })
+    .option('all', {
+      alias: 'a',
+      type: 'boolean',
+      description: 'Bootstrap only current project.'
+    })
     .demandCommand()
     .help()
     .argv;
@@ -85,7 +90,7 @@ async function cli() {
   } else if (command === 'remove') {
     await remove(argv.dependency);
   } else if (command === 'bootstrap') {
-    await bootstrap();
+    await bootstrap(argv.all);
   } else {
     await yarn(argv._);
   }
