@@ -1,6 +1,10 @@
 import { init, add, local, remove, bootstrap, build } from './api';
-import { yarn } from './util';
+import { yarn, findPackage } from './util';
 const inquirer = require('inquirer');
+const thenifyAll = require('thenify-all');
+const fs = thenifyAll(require('fs'));
+const path = require('path');
+const _ = require('lodash');
 
 async function cli() {
   const argv = require('yargs')
@@ -25,6 +29,7 @@ async function cli() {
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
+    .command('node [command...]', 'Execute the node process, or babel-node if config.poly speciifies babel: true')
     .option('all', {
       alias: 'a',
       type: 'boolean',
@@ -44,6 +49,20 @@ async function cli() {
     .help()
     .argv;
   
+  const {packPath} = await findPackage();
+  const configPath = path.join(path.parse(packPath).dir, 'config.poly');
+  const defaultConfig = {
+    babel: false
+  };
+  let config;
+  try {
+    config = JSON.parse(await fs.readFile(configPath));
+  } catch(e) {
+    // not found
+    config = {};
+  }
+  config = _.merge({}, defaultConfig, config);
+
   // const command
   const command = argv._[0];
   if (command === 'init') {
@@ -98,6 +117,16 @@ async function cli() {
     await bootstrap(argv.all, argv.force);
   } else if (command === 'build') {
     await build(argv.force);
+  } else if (command === 'node') {
+    let cmd = 'node';
+    if (config.babel) {
+      cmd = 'babel-node';
+      console.log('executing with babel-node');
+    }
+    let args = process.argv.splice(3, process.argv.length);
+    args = ['exec', cmd].concat(args);
+    await yarn(args);
+    // await spawnChildProcess(cmd, args);
   } else {
     await yarn(argv._);
   }
