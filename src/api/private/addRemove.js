@@ -2,7 +2,7 @@ const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 import { findRepository, findPackage, yarn, sortObject, fallback, hashDirectory } from '../../util';
 
-export default async function addRemove(dependencies, dev, type, cwd) {
+export default async function addRemove(dependencies, type, config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
   let {pack, packPath} = await findPackage(cwd);
   const projectName = pack.name;
@@ -14,8 +14,17 @@ export default async function addRemove(dependencies, dev, type, cwd) {
   let yarnCmd;
   if (type === 'add') {
     yarnCmd = ['add'];
-    if (dev) {
+    if (config.dev) {
       yarnCmd.push('--dev');
+    } else if (config.peer) {
+      yarnCmd.push('--peer');
+    } else if (config.optional) {
+      yarnCmd.push('--optional');
+    }
+    if (config.exact) {
+      yarnCmd.push('--exact');
+    } else if (config.tilde) {
+      yarnCmd.push('--tilde');
     }
   } else if (type === 'remove') {
     yarnCmd = ['remove'];

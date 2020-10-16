@@ -3,21 +3,21 @@ const path = require('path');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 
-export default async function build(force, cwd) {
+export default async function build(config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
   const {packPath} = await findPackage(cwd);
   const packDir = path.parse(packPath).dir;
   const {project, projectName} = findProjectByLocalPath(repo, packDir);
-  if (!force) {
+  if (!config.force) {
     const hash = await doHash(project);
     if (project.hash !== hash) {
-      force = true;
+      config.force = true;
     } else {
       console.log(`Skipping build for "${projectName}": no files in the project directory have changed.`);
     }
   }
 
-  if (force) {
+  if (config.force) {
     await yarn('build', project.local_path);
     const hash = await doHash(project);
     project.hash = hash;

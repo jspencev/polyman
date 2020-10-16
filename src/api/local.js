@@ -2,7 +2,7 @@ import { findRepository } from '../util';
 import add from './add';
 import remove from './remove';
 
-export default async function local(projects, dev, nextCdm, cwd) {
+export default async function local(projects, nextCdm, config, cwd) {
   const {repo} = await findRepository(cwd);
   projects.map(function(project) {
     const projectDetails = repo.projects[project]
@@ -25,7 +25,7 @@ export default async function local(projects, dev, nextCdm, cwd) {
       const projectPath = repo.projects[p].local_path;
       deps.push(`@${repo.name}/${p}@file:${projectPath}`);
     });
-    await add(deps, dev, cwd);
+    await add(deps, config, cwd);
   } else if (nextCdm === 'remove') {
     projects.map(function(p) {
       deps.push(`@${repo.name}/${p}`);
