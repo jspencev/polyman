@@ -1,6 +1,7 @@
 import { findRepository } from '../util';
 import add from './add';
 import remove from './remove';
+import pack from './private/pack';
 
 export default async function local(projects, nextCdm, config, cwd) {
   const {repo} = await findRepository(cwd);
@@ -21,10 +22,17 @@ export default async function local(projects, nextCdm, config, cwd) {
 
   let deps = [];
   if (nextCdm === 'add') {
-    projects.map(function(p) {
-      const projectPath = repo.projects[p].local_path;
-      deps.push(`@${repo.name}/${p}@file:${projectPath}`);
-    });
+    for (const projectName of projects) {
+      const project = repo.projects[projectName];
+      const scopedName = `@${repo.name}/${projectName}`;
+      let projectPath;
+      if (config.pack) {
+        projectPath = await pack(project, projectName, cwd);
+      } else {
+        projectPath = project.local_path;
+      }
+      deps.push(`${scopedName}@file:${projectPath}`);
+    }
     await add(deps, config, cwd);
   } else if (nextCdm === 'remove') {
     projects.map(function(p) {

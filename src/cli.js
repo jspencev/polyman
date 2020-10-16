@@ -34,6 +34,11 @@ const OPTIONS = {
     type: 'boolean',
     description: 'Add as optional dependency'
   },
+  pack: {
+    alias: 'p',
+    type: 'boolean',
+    description: 'Pack into tarball before locally adding.'
+  },
   peer: {
     type: 'boolean',
     description: 'Add as peer dependency'

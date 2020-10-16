@@ -6,8 +6,10 @@ import findPackage from './findPackage';
 import findProjectByLocalPath from './findProjectByLocalPath';
 import findRepository from './findRepository';
 import hashDirectory from './hashDirectory';
+import moveFile from './moveFile';
 import sortObject from './sortObject';
 import spawnChildProcess from './spawnChildProcess';
+import writeFileIfNotExist from './writeFileIfNotExist';
 import yarn from './yarn';
 
 export {
@@ -19,7 +21,9 @@ export {
   findProjectByLocalPath,
   findRepository,
   hashDirectory,
+  moveFile,
   sortObject,
   spawnChildProcess,
+  writeFileIfNotExist,
   yarn
 }
