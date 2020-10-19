@@ -48,7 +48,7 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) 
     }
     await fs.writeFile('./.gitignore', gitignore);
 
-    await add(['@commitlint/cli', '@commitlint/config-conventional', 'cz-conventional-changelog', 'git-cz', 'husky', 'commitizen'], true);
+    await add(['@commitlint/cli', '@commitlint/config-conventional', 'cz-conventional-changelog', 'git-cz', 'husky', 'commitizen'], {dev: true});
     const pack = JSON.parse(await fs.readFile('./package.json'));
     pack.scripts = {
       commit: 'git-cz'
