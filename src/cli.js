@@ -84,10 +84,10 @@ async function cli() {
     .help();
   const argv = yargs.argv;
 
-  const {packPath} = await findPackage();
-  const configPath = path.join(path.parse(packPath).dir, 'config.poly');
   let fileConfig;
   try {
+    const {packPath} = await findPackage();
+    const configPath = path.join(path.parse(packPath).dir, 'config.poly');
     fileConfig = JSON.parse(await fs.readFile(configPath));
   } catch(e) {
     // not found
