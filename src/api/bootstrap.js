@@ -1,21 +1,21 @@
-import { findRepository, findPackage, fallback, yarn, hashDirectory, findProjectByLocalPath } from '../util';
+import { findRepository, findPackage, fallback, hashDirectory, findProjectByLocalPath } from '../util';
 import local from './local';
 import build from './build';
 const path = require('path');
 
-export default async function bootstrap(all, force, cwd) {
+export default async function bootstrap(config, cwd) {
   const {repo} = await findRepository(cwd);
-  let packPath
+  let packPath;
   try {
     ({packPath} = await findPackage(cwd));
   } catch (e) {
     console.log(`Looks like you're not in a package. Bootstrapping all...`);
-    all = true;
+    config.all = true;
   }
   
   let projectNames = Object.keys(repo.projects);
 
-  if (!all) {
+  if (!config.all) {
     const projectDir = path.parse(packPath).dir;
     const {projectName, project} = findProjectByLocalPath(repo, projectDir);
     let seen = {};
@@ -28,7 +28,7 @@ export default async function bootstrap(all, force, cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       try {
-        await build(force, project.local_path);
+        await build(config, project.local_path);
       } catch (e) {
         throw Error(`Project "${projectName}": build failed`);
       }
@@ -39,18 +39,20 @@ export default async function bootstrap(all, force, cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       const {localDeps, localDevDeps} = getDeps(project);
-      await runLink(project, projectName, localDeps, repo, false, force);
-      await runLink(project, projectName, localDevDeps, repo, true, force);
+      config.dev = false;
+      await runLink(project, projectName, localDeps, repo, config);
+      config.dev = true;
+      await runLink(project, projectName, localDevDeps, repo, config);
     }
   }
 }
 
-async function runLink(project, projectName, deps, repo, dev, force) {
+async function runLink(project, projectName, deps, repo, config) {
   const toLink = [];
   for (const projectName in deps) {
     const localPath = repo.projects[projectName].local_path
     if (localPath) {
-      if (force) {
+      if (config.force) {
         toLink.push(projectName);
       } else {
         const oldHash = deps[projectName];
@@ -65,7 +67,8 @@ async function runLink(project, projectName, deps, repo, dev, force) {
   }
   if (toLink.length > 0) {
     try {
-      await local(toLink, dev, 'add', project.local_path);
+      await local(toLink, 'remove', config, project.local_path);
+      await local(toLink, 'add', config, project.local_path);
     } catch (e) {
       throw Error(`The project "${projectName}" does not exist at path "${project.local_path}"`);
     }

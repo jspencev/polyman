@@ -1,4 +1,4 @@
-import doesExist from './doesExist';
+import doesOneExist from './doesOneExist';
 
 /**
  * Returns the first of the submitted argments that is not undefined or null, falling back to the value of the last argument.
@@ -9,7 +9,7 @@ import doesExist from './doesExist';
 export default function fallback(...args) {
   for (let i = 0; i < args.length - 1; i++) {
     const arg = args[i];
-    if (doesExist(arg)) {
+    if (doesOneExist(arg)) {
       return arg;
     }
   }

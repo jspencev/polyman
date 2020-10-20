@@ -11,10 +11,7 @@ module.exports = function (api) {
     }]
   ];
 
-  const plugins = [
-    'babel-plugin-transform-inline-environment-variables',
-    'babel-plugin-minify-dead-code-elimination',
-  ];
+  const plugins = [];
 
   return {
     presets,
