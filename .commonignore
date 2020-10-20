@@ -1,0 +1,21 @@
+/node_modules
+/.env
+/tmp.js
+/yarn-error.log
+
+#! .gitignore
+/dist
+
+#! .npmignore
+/src
+/.commonignore
+/.envrc
+/.gitignore
+/.nvmrc
+/addGlobal.js
+/babel.config.js
+/commitlint.config.js
+/config.poly
+/jsconfig.json
+/yarn-error.log
+/yarn.lock

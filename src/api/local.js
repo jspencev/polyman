@@ -1,24 +1,38 @@
-import { findRepository } from '../util';
+import { findRepository, findPackage } from '../util';
 import add from './add';
 import remove from './remove';
 import pack from './private/pack';
 
 export default async function local(projects, nextCdm, config, cwd) {
   const {repo} = await findRepository(cwd);
-  projects.map(function(project) {
-    const projectDetails = repo.projects[project]
-    if (!projectDetails) {
-      throw Error( `Project "${project}" is not a project in this polyrepo`);
+  const myPackage = await findPackage(cwd);
+  const myName = myPackage.pack.name;
+  const toStrip = [];
+  for (const projectName of projects) {
+    const project = repo.projects[projectName]
+    if (!project) {
+      throw Error( `Project "${projectName}" is not a project in this polyrepo`);
     }
   
-    if (!projectDetails.local_path && !projectDetails.git_repository) {
+    if (!project.local_path && !project.git_repository) {
       throw Error(`Project is not local and does not have a git repository. The project must have at least one.`);
     }
   
-    if (!projectDetails.local_path) {
+    if (!project.local_path) {
       throw Error('Cloning from git repository is not yet supported.');
     }
-  });
+
+    if (project.npm && repo.projects[myName].dependencies[project.npm]) {
+      toStrip.push(project.npm);
+    }
+  }
+
+  if (toStrip.length > 0) {
+    console.log(`Stripping ${toStrip.join(' ')}...`);
+    try {
+      await remove(toStrip, cwd);
+    } catch (e) {}
+  }
 
   let deps = [];
   if (nextCdm === 'add') {
