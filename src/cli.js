@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build } from './api';
+import { init, add, local, remove, bootstrap, build, delocalize } from './api';
 import { yarn, findPackage } from './util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
@@ -52,12 +52,12 @@ const OPTIONS = {
 async function cli() {
   let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
-    .command('add [dependency...]', 'Add dependency(ies) to your project', function(yargs) {
+    .command('add <dependency...>', 'Add dependency(ies) to your project', function(yargs) {
       yargs.positional('dependency', {
         description: 'Dependency to add'
       })
     })
-    .command('local [cmd] [dependency...]', 'Add project(s) in this polyrepo as a dependency', function(yargs) {
+    .command('local <cmd> <dependency...>', 'Add project(s) in this polyrepo as a dependency', function(yargs) {
       yargs.positional('cmd', {
         description: 'Action to take. "add" or "remove"'
       })
@@ -65,14 +65,20 @@ async function cli() {
         description: 'Project to add as dependency'
       })
     })
-    .command('remove [dependency...]', 'Remove dependency(ies) to your project', function(yargs) {
+    .command('remove <dependency...>', 'Remove dependency(ies) to your project', function(yargs) {
       yargs.positional('dependency', {
         description: 'Project to add as dependency'
       })
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
-    .command('node [command...]', 'Execute the node process. If --babel, executes with babel-node');
+    .command('delocalize [dependency...]', 'Transforms all local dependencies into dependencies.', function(yargs) {
+      yargs.positional('dependency', {
+        description: 'Projects to delocalize. If not passed, will delocalize all.',
+        default: []
+      })
+    })
+    .command('node <command...>', 'Execute the node process. If --babel, executes with babel-node');
 
   const defaultConfig = {};
   for (const option in OPTIONS) {
@@ -157,6 +163,8 @@ async function cli() {
     await bootstrap(config);
   } else if (command === 'build') {
     await build(config);
+  } else if (command === 'delocalize') {
+    await delocalize(argv.dependency, config);
   } else if (command === 'node') {
     let cmd = 'node';
     if (config.babel) {

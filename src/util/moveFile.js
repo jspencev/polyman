@@ -1,12 +1,16 @@
+import writeFileIfNotExist from './writeFileIfNotExist';
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 
 export default async function moveFile(oldPath, newPath) {
+  await writeFileIfNotExist(newPath, '');
   try {
     await fs.rename(oldPath, newPath);
   } catch(e) {
     if (e.code === 'EXDEV') {
       await copy();
+    } else {
+      throw e;
     }
   }
 }

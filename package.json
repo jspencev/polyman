@@ -18,23 +18,11 @@
     "commit": "git-cz",
     "test": "echo \"no test file\"\n"
   },
-  "devDependencies": {
-    "@babel/cli": "^7.11.6",
-    "@babel/preset-env": "^7.11.5",
-    "@carbon/commonignore-js": "file:/Users/john/Dropbox/Code/carbon-new/commonignore-js",
-    "@commitlint/cli": "^11.0.0",
-    "@commitlint/config-conventional": "^11.0.0",
-    "babel-plugin-minify-dead-code-elimination": "^0.5.1",
-    "babel-plugin-transform-inline-environment-variables": "^0.4.3",
-    "commitizen": "^4.2.1",
-    "cz-conventional-changelog": "^3.3.0",
-    "git-cz": "^4.7.1",
-    "husky": "^4.3.0"
-  },
   "dependencies": {
     "@babel/core": "^7.12.1",
     "@babel/node": "^7.12.1",
     "@babel/register": "^7.12.1",
+    "@carbon/util": "file:.poly/dependencies/util-v1.0.0.tgz",
     "core-js": "^3.6.5",
     "glob": "^7.1.6",
     "inquirer": "^7.3.3",
@@ -43,6 +31,19 @@
     "thenify": "^3.3.1",
     "thenify-all": "^1.6.0",
     "yargs": "^16.0.3"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
+    "@carbon/commonignore-js": "npm:commonignore-js",
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
+    "babel-plugin-minify-dead-code-elimination": "^0.5.1",
+    "babel-plugin-transform-inline-environment-variables": "^0.4.3",
+    "commitizen": "^4.2.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "git-cz": "^4.7.1",
+    "husky": "^4.3.0"
   },
   "config": {
     "commitizen": {

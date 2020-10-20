@@ -10,20 +10,17 @@ export default async function build(config, cwd) {
   const {project, projectName} = findProjectByLocalPath(repo, packDir);
   if (!config.force) {
     const hash = await doHash(project);
-    if (project.hash !== hash) {
-      config.force = true;
-    } else {
-      console.log(`Skipping build for "${projectName}": no files in the project directory have changed.`);
+    if (project.hash === hash) {
+      return false;
     }
   }
 
-  if (config.force) {
-    await yarn('build', project.local_path);
-    const hash = await doHash(project);
-    project.hash = hash;
-    repo.projects[projectName] = project;
-    await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
-  }
+  await yarn('build', project.local_path);
+  const hash = await doHash(project);
+  project.hash = hash;
+  repo.projects[projectName] = project;
+  await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
+  return true;
 }
 
 async function doHash(project) {

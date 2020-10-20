@@ -49,7 +49,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
   const localDevDeps = {};
   for (const dep in newDeps) {
     const depVal = newDeps[dep];
-    if (depVal.includes('file:') && dep.includes(`@${repo.name}`)) {
+    if (depVal.includes('file:') && dep.includes(`@${repo.name}`) && !depVal.includes('.tgz')) {
       const pname = dep.split('/')[1];
       if (repo.projects[pname]) {
         const hash = await hashDirectory(repo.projects[pname].local_path, ['node_modules']);

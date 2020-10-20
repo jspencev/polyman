@@ -41,7 +41,7 @@ export default async function local(projects, nextCdm, config, cwd) {
       const scopedName = `@${repo.name}/${projectName}`;
       let projectPath;
       if (config.pack) {
-        projectPath = await pack(project, projectName, cwd);
+        projectPath = await pack(projectName, project, cwd);
       } else {
         projectPath = project.local_path;
       }

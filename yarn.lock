@@ -953,14 +953,20 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@carbon/commonignore-js@file:/Users/john/Dropbox/Code/carbon-new/commonignore-js":
+"@carbon/commonignore-js@npm:commonignore-js":
   version "1.0.1"
+  resolved "https://registry.yarnpkg.com/commonignore-js/-/commonignore-js-1.0.1.tgz#a352cb5755332859bbb478f1dbb18b35b0f337d3"
+  integrity sha512-cKcCNGb3mTQY4OLr63n1qB+OD8lwU6Sabm09tzjwiHLRBskeD39Jr3zoZaYZ3JG0QO0D0GukLrkY8g4DDxENBA==
   dependencies:
     core-js "^3.6.5"
     glob "^7.1.6"
     thenify "^3.3.1"
     thenify-all "^1.6.0"
     yargs "^16.1.0"
+
+"@carbon/util@file:.poly/dependencies/util-v1.0.0.tgz":
+  version "1.0.0"
+  resolved "file:.poly/dependencies/util-v1.0.0.tgz#33eac50161fc27481d88222351cbe2dabf3db539"
 
 "@commitlint/cli@^11.0.0":
   version "11.0.0"
