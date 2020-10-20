@@ -953,7 +953,7 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@carbon/commonignore-js@file:/Users/john/Dropbox/Code/carbon-new/commonignore-js":
+"@carbon/commonignore-js@file:../commonignore-js":
   version "1.0.1"
   dependencies:
     core-js "^3.6.5"
@@ -961,9 +961,6 @@
     thenify "^3.3.1"
     thenify-all "^1.6.0"
     yargs "^16.1.0"
-
-"@carbon/util@file:../util":
-  version "1.0.0"
 
 "@commitlint/cli@^11.0.0":
   version "11.0.0"

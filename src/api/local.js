@@ -1,7 +1,12 @@
-import { findRepository, findPackage } from '../util';
+import { findRepository, findPackage, getAppRootPath } from '../util';
 import add from './add';
 import remove from './remove';
 import pack from './private/pack';
+const thenify = require('thenify');
+const glob = thenify(require('glob'));
+const path = require('path');
+const thenifyAll = require('thenify-all');
+const fs = thenifyAll(require('fs'));
 
 export default async function local(projects, nextCdm, config, cwd) {
   const {repo} = await findRepository(cwd);
@@ -49,10 +54,17 @@ export default async function local(projects, nextCdm, config, cwd) {
     }
     await add(deps, config, cwd);
   } else if (nextCdm === 'remove') {
-    projects.map(function(p) {
+    let tarballsToRemove = [];
+    const appRootPath = await getAppRootPath(cwd);
+    for (const p of projects) {
       deps.push(`@${repo.name}/${p}`);
-    });
+      const files = await glob(path.join(appRootPath, `./.poly/dependencies/${p}*`));
+      tarballsToRemove = tarballsToRemove.concat(files);
+    }
     await remove(deps, cwd);
+    for (const tarballPath of tarballsToRemove) {
+      await fs.unlink(tarballPath);
+    }
   } else {
     throw Error('local command must be followed by either "add" or "remove"');
   }
