@@ -22,6 +22,8 @@
     "@babel/core": "^7.12.1",
     "@babel/node": "^7.12.1",
     "@babel/register": "^7.12.1",
+    "@carbon/node-util": "file:/Users/john/Dropbox/Code/carbon-new/node-util",
+    "@carbon/util": "file:/Users/john/Dropbox/Code/carbon-new/util",
     "core-js": "^3.6.5",
     "glob": "^7.1.6",
     "inquirer": "^7.3.3",

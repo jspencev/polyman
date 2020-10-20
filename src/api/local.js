@@ -1,4 +1,5 @@
-import { findRepository, findPackage, getAppRootPath } from '../util';
+import { findRepository } from '../util';
+import { findPackage, getAppRootPath } from '@carbon/node-util';
 import add from './add';
 import remove from './remove';
 import pack from './private/pack';

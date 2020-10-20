@@ -1,5 +1,6 @@
 import { init, add, local, remove, bootstrap, build, delocalize, localize, clone } from './api';
-import { yarn, findPackage } from './util';
+import { yarn } from './util';
+import { findPackage } from '@carbon/node-util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));

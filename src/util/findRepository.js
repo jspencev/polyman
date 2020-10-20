@@ -1,6 +1,6 @@
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import findFileUpPath from './findFileUpPath';
+import { findFileUpPath } from '@carbon/node-util';
 
 export default async function findRepository(cwd = process.cwd()) {
   const filePath = await findFileUpPath(cwd, 'repository.poly');

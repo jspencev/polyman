@@ -1,7 +1,9 @@
 import { yarn } from '../util';
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { spawnChildProcess, findRepository, findPackage, sortObject } from '../util';
+import { findRepository } from '../util';
+import { findPackage, spawnChildProcess } from '@carbon/node-util';
+import { sortObject } from '@carbon/util';
 import add from './add';
 const path = require('path');
 

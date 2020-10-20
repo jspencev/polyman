@@ -1,4 +1,4 @@
-import spawnChildProcess from './spawnChildProcess';
+import { spawnChildProcess } from '@carbon/node-util';
 
 export default async function yarn(command, dir = process.cwd()) {
   if (typeof command === 'string') {

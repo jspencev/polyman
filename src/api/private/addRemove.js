@@ -1,6 +1,8 @@
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { findRepository, findPackage, yarn, sortObject, fallback, hashDirectory } from '../../util';
+import { findRepository, yarn, hashDirectory } from '../../util';
+import { findPackage } from '@carbon/node-util';
+import { fallback, sortObject } from '@carbon/util';
 
 export default async function addRemove(dependencies, type, config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);

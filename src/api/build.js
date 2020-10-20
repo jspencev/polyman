@@ -1,4 +1,5 @@
-import { findPackage, yarn, hashDirectory, findRepository, findProjectByLocalPath } from '../util';
+import { yarn, hashDirectory, findRepository, findProjectByLocalPath } from '../util';
+import { findPackage } from '@carbon/node-util';
 const path = require('path');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
