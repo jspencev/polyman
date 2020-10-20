@@ -953,8 +953,10 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@carbon/commonignore-js@file:../commonignore-js":
+"@carbon/commonignore-js@npm:commonignore-js":
   version "1.0.1"
+  resolved "https://registry.yarnpkg.com/commonignore-js/-/commonignore-js-1.0.1.tgz#a352cb5755332859bbb478f1dbb18b35b0f337d3"
+  integrity sha512-cKcCNGb3mTQY4OLr63n1qB+OD8lwU6Sabm09tzjwiHLRBskeD39Jr3zoZaYZ3JG0QO0D0GukLrkY8g4DDxENBA==
   dependencies:
     core-js "^3.6.5"
     glob "^7.1.6"

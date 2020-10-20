@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build, delocalize, localize } from './api';
+import { init, add, local, remove, bootstrap, build, delocalize, localize, clone } from './api';
 import { yarn, findPackage } from './util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
@@ -82,6 +82,11 @@ async function cli() {
       yargs.positional('dependency', {
         description: 'Projects to delocalize. If not passed, will delocalize all.',
         default: []
+      })
+    })
+    .command('clone <dependency...>', 'Clones a non-local project.', function(yargs) {
+      yargs.positional('dependency', {
+        description: 'Project to add as dependency'
       })
     })
     .command('node <command...>', 'Execute the node process. If --babel, executes with babel-node');
@@ -173,6 +178,8 @@ async function cli() {
     await localize(argv.dependency, config);
   } else if (command === 'delocalize') {
     await delocalize(argv.dependency, config);
+  } else if (command === 'clone') {
+    await clone(argv.dependency, config);
   } else if (command === 'node') {
     let cmd = 'node';
     if (config.babel) {
