@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build, delocalize } from './api';
+import { init, add, local, remove, bootstrap, build, delocalize, localize } from './api';
 import { yarn, findPackage } from './util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
@@ -72,6 +72,12 @@ async function cli() {
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
+    .command('localize [dependency...]', 'Localize project dependencies.', function(yargs) {
+      yargs.positional('dependency', {
+        description: 'Projects to localize. If not passed, will localize all.',
+        default: []
+      })
+    })
     .command('delocalize [dependency...]', 'Transforms all local dependencies into dependencies.', function(yargs) {
       yargs.positional('dependency', {
         description: 'Projects to delocalize. If not passed, will delocalize all.',
@@ -163,6 +169,8 @@ async function cli() {
     await bootstrap(config);
   } else if (command === 'build') {
     await build(config);
+  } else if (command === 'localize') {
+    await localize(argv.dependency, config);
   } else if (command === 'delocalize') {
     await delocalize(argv.dependency, config);
   } else if (command === 'node') {

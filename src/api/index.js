@@ -4,6 +4,7 @@ import build from './build';
 import delocalize from './delocalize';
 import init from './init';
 import local from './local';
+import localize from './localize';
 import remove from './remove';
 
 const commands = {
@@ -13,6 +14,7 @@ const commands = {
   delocalize,
   init,
   local,
+  localize,
   remove
 };
 
@@ -23,6 +25,7 @@ export {
   delocalize,
   init,
   local,
+  localize,
   remove
 };
 

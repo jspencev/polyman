@@ -22,7 +22,7 @@
     "@babel/core": "^7.12.1",
     "@babel/node": "^7.12.1",
     "@babel/register": "^7.12.1",
-    "@carbon/util": "file:.poly/dependencies/util-v1.0.0.tgz",
+    "@carbon/util": "file:/Users/john/Dropbox/Code/carbon-new/util",
     "core-js": "^3.6.5",
     "glob": "^7.1.6",
     "inquirer": "^7.3.3",
@@ -35,7 +35,7 @@
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
-    "@carbon/commonignore-js": "npm:commonignore-js",
+    "@carbon/commonignore-js": "file:/Users/john/Dropbox/Code/carbon-new/commonignore-js",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
     "babel-plugin-minify-dead-code-elimination": "^0.5.1",
