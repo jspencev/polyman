@@ -1,4 +1,7 @@
-console.log(`yarn add global file:${__dirname}`);
-require('child_process').spawn('yarn', ['global', 'add', `file:${__dirname}`], {stdio: 'inherit'}).on('exit', function() {
-  process.exit();
-});
+import { spawnChildProcess, findPackage } from '@carbon/node-util';
+(async function() {
+  const {pack} = await findPackage();
+  const name = pack.name;
+  await spawnChildProcess('yarn', ['global', 'remove', name]);
+  await spawnChildProcess('yarn', ['global', 'add', `file:${__dirname}`]);
+})();
