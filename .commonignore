@@ -1,3 +1,4 @@
+/.poly/tmp
 /node_modules
 /.env
 /tmp.js

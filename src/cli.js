@@ -1,11 +1,14 @@
 import { init, add, local, remove, bootstrap, build, delocalize, localize, clone } from './api';
 import { yarn } from './util';
-import { findPackage } from '@carbon/node-util';
+import { spawnChildProcess, getAppRootPath, writeFileIfNotExist } from '@carbon/node-util';
+import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
 const inquirer = require('inquirer');
+const thenify = require('thenify');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 const path = require('path');
 const _ = require('lodash');
+const rimraf = thenify(require('rimraf'));
 
 const OPTIONS = {
   all: {
@@ -30,6 +33,16 @@ const OPTIONS = {
     alias: 'f',
     type: 'boolean',
     description: 'Force'
+  },
+  inspect: {
+    type: 'boolean',
+    alias: 'debug',
+    description: 'Pass inspect to the node process'
+  },
+  "inspect-brk": {
+    type: 'boolean',
+    alias: 'debug-brk',
+    description: 'Pass inspect-brk to the node process'
   },
   optional: {
     type: 'boolean',
@@ -103,9 +116,14 @@ async function cli() {
   const argv = yargs.argv;
 
   let fileConfig;
+  let appRootPath;
   try {
-    const {packPath} = await findPackage();
-    const configPath = path.join(path.parse(packPath).dir, 'config.poly');
+    appRootPath = await getAppRootPath();
+  } catch (e) {
+    // not in a package
+  }
+  try {
+    const configPath = path.join(appRootPath, 'config.poly');
     fileConfig = JSON.parse(await fs.readFile(configPath));
   } catch(e) {
     // not found
@@ -188,8 +206,36 @@ async function cli() {
       console.log('executing with babel-node');
     }
     let args = process.argv.splice(3, process.argv.length);
-    args = ['exec', cmd].concat(args);
-    await yarn(args);
+    let newArgs = [];
+    for (const arg of args) {
+      if (!isOneOf(arg, '--inspect-brk', '--inspect', '--debug', '--debug-brk')) {
+        newArgs.push(arg);
+      }
+    }
+    args = newArgs;
+    if (argv.inspect) {
+      args.unshift('--inspect');
+    } else if (argv.inspectBrk) {
+      args.unshift('--inspect-brk');
+    }
+    if (config.babel && isOneTruthy(argv.inspect, argv.inspectBrk)) {
+      let inspectArg = args.shift();
+      let fileToRun = args.shift();
+      fileToRun = path.join(process.cwd(), fileToRun);
+      const tmpFilePath = path.join(fallback(appRootPath, process.cwd()), './.poly/tmp/entry.js');
+      const code = `
+        require("@babel/register");
+        require("${fileToRun}");
+      `;
+      await writeFileIfNotExist(tmpFilePath, code);
+      args.unshift(tmpFilePath);
+      args.unshift(inspectArg);
+      await spawnChildProcess('node', args);
+      await rimraf(tmpFilePath);
+    } else {
+      args = ['exec', cmd].concat(args);
+      await yarn(args);
+    }
   } else {
     await yarn(argv._);
   }

@@ -1,7 +1,7 @@
-import { spawnChildProcess, findPackage } from '@carbon/node-util';
+import { spawnChildProcess } from '@carbon/node-util';
+import { deleteFromYarnCache } from './src/util';
+
 (async function() {
-  const {pack} = await findPackage();
-  const name = pack.name;
-  await spawnChildProcess('yarn', ['global', 'remove', name]);
+  await deleteFromYarnCache('polyman');
   await spawnChildProcess('yarn', ['global', 'add', `file:${__dirname}`]);
 })();

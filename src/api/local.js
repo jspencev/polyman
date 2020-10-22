@@ -1,4 +1,4 @@
-import { findRepository } from '../util';
+import { findRepository, deleteFromYarnCache } from '../util';
 import { findPackage, getAppRootPath } from '@carbon/node-util';
 import add from './add';
 import remove from './remove';
@@ -45,6 +45,7 @@ export default async function local(projects, nextCdm, config, cwd) {
     for (const projectName of projects) {
       const project = repo.projects[projectName];
       const scopedName = `@${repo.name}/${projectName}`;
+      await deleteFromYarnCache(scopedName);
       let projectPath;
       if (config.pack) {
         projectPath = await pack(projectName, project, cwd);
