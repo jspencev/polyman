@@ -1,6 +1,6 @@
 import { init, add, local, remove, bootstrap, build, delocalize, localize, clone } from './api';
 import { yarn } from './util';
-import { spawnChildProcess, getAppRootPath, writeFileIfNotExist } from '@carbon/node-util';
+import { spawnChildProcess, getAppRootPath, writeFileIfNotExist, launchBabelDebug } from '@carbon/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
 const inquirer = require('inquirer');
 const thenify = require('thenify');
@@ -213,26 +213,18 @@ async function cli() {
       }
     }
     args = newArgs;
-    if (argv.inspect) {
-      args.unshift('--inspect');
-    } else if (argv.inspectBrk) {
-      args.unshift('--inspect-brk');
-    }
     if (config.babel && isOneTruthy(argv.inspect, argv.inspectBrk)) {
-      let inspectArg = args.shift();
       let fileToRun = args.shift();
       fileToRun = path.join(process.cwd(), fileToRun);
-      const tmpFilePath = path.join(fallback(appRootPath, process.cwd()), './.poly/tmp/entry.js');
-      const code = `
-        require("@babel/register");
-        require("${fileToRun}");
-      `;
-      await writeFileIfNotExist(tmpFilePath, code);
-      args.unshift(tmpFilePath);
-      args.unshift(inspectArg);
-      await spawnChildProcess('node', args);
-      await rimraf(tmpFilePath);
+      const tmpFilePath = path.join(fallback(appRootPath, process.cwd()), './.poly/tmp');
+      const brk = argv.inspectBrk;
+      await launchBabelDebug(fileToRun, tmpFilePath, brk);
     } else {
+      if (argv.inspect) {
+        args.unshift('--inspect');
+      } else if (argv.inspectBrk) {
+        args.unshift('--inspect-brk');
+      }
       args = ['exec', cmd].concat(args);
       await yarn(args);
     }
