@@ -79,18 +79,6 @@ async function cli() {
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
-    .command('localize [dependency...]', 'Localize project dependencies.', function(yargs) {
-      yargs.positional('dependency', {
-        description: 'Projects to localize. If not passed, will localize all.',
-        default: []
-      })
-    })
-    .command('delocalize [dependency...]', 'Transforms all local dependencies into dependencies.', function(yargs) {
-      yargs.positional('dependency', {
-        description: 'Projects to delocalize. If not passed, will delocalize all.',
-        default: []
-      })
-    })
     .command('clone <dependency...>', 'Clones a non-local project.', function(yargs) {
       yargs.positional('dependency', {
         description: 'Project to add as dependency'
