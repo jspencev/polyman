@@ -6,6 +6,11 @@ import build from './build';
 const path = require('path');
 const _ = require('lodash');
 
+const TYPES = {
+  REGULAR: 'regular',
+  DEV: 'dev'
+};
+
 export default async function bootstrap(config, cwd) {
   console.warn('DO NOT EXIT THIS PROCESS!');
   console.warn('YOU COULD LOSE REFERENCE TO THE LOCAL DEPENDENCIES ON A PROJECT AND YOU WILL HAVE TO RE-ADD THEM MANUALLY!');
@@ -29,13 +34,9 @@ export default async function bootstrap(config, cwd) {
   } else {
     projectNames = Object.keys(repo.projects);
   }
-
+  
   if (!config.all) {
-    let seen = {};
-    seen[myProjectName] = true;
-    seen = findMyDeps(seen, myProject, repo);
-    projectNames = Object.keys(seen);
-    projectNames = projectNames.reverse();
+    projectNames = findMyDeps(myProjectName, repo);
   }
 
   const failedBuilds = [];
@@ -47,38 +48,29 @@ export default async function bootstrap(config, cwd) {
         console.log('-----------------------------------------------------------------');
         await build(config, project.local_path);
       } catch (e) {
-        if (config.bootstrap_round_2) {
-          console.error(`Project "${projectName}": build failed.`);
-        } else {
-          console.warn(`Project "${projectName}": build failed. Retrying after linking.`);
-        }
+        console.error(`Project "${projectName}": build failed.`);
         failedBuilds.push(projectName);
       }
     }
-  }
 
-  for (const projectName of projectNames) {
     console.log(`Polyman: Relinking ${projectName}`);
     console.log('-----------------------------------------------------------------');
-    const project = repo.projects[projectName];
     if (project.local_path) {
       const {localDeps, localDevDeps} = getDeps(project);
-      const allDeps = _.merge({}, localDeps, localDevDeps);
-
-      const depsToRemove = Object.keys(allDeps);
+      const depsToRemove = localDeps.concat(localDevDeps);
       if (depsToRemove.length > 0) {
         console.warn('DO NOT EXIT THIS PROCESS!');
         console.warn('YOU COULD LOSE REFERENCE TO THE LOCAL DEPENDENCIES ON A PROJECT AND YOU WILL HAVE TO RE-ADD THEM MANUALLY!');
 
         await local(depsToRemove, 'remove', config, project.local_path);
 
-        const depsToAdd = Object.keys(localDeps);
+        const depsToAdd = localDeps
         if (depsToAdd.length > 0) {
           config.dev = false;
           await local(depsToAdd, 'add', config, project.local_path);
         }
   
-        const devDepsToAdd = Object.keys(localDevDeps);
+        const devDepsToAdd = localDevDeps;
         if (devDepsToAdd.length > 0) {
           config.dev = true;
           await local(devDepsToAdd, 'add', config, project.local_path);
@@ -86,38 +78,99 @@ export default async function bootstrap(config, cwd) {
       }
     }
   }
+}
 
-  if (failedBuilds.length > 0) {
-    if (!config.bootstrap_round_2) {
-      console.log(`Polyman: Retrying failed builds....`);
-      config.bootstrap_round_2 = {
-        failed: failedBuilds
-      };
-      await bootstrap(config, cwd);
-    } else {
-      console.log(`Polyman: ${failedBuilds.length} builds still failing:`);
-      for (const failed of failedBuilds) {
-        console.log('  ' + failed);
+function findMyDeps(projectName, repo) {
+  let {tree} = genDepTree(projectName, repo);
+ 
+  let finalRunOrder = [];
+  let runOrder = [];
+  let done = {};
+  const randomRun = [];
+  while(Object.keys(tree).length > 0) {
+    ({runOrder, tree} = determineRunOrder(tree, done));
+    finalRunOrder = finalRunOrder.concat(runOrder).concat(randomRun);
+    let least = 100000000;
+    let chosen;
+    for (const node in tree) {
+      const d = tree[node];
+      if (d.children.length <= least) {
+        chosen = node;
+        least = d.children.length;
       }
     }
+    randomRun.push(chosen);
+    done = {};
+    done[chosen] = true;
   }
+  return finalRunOrder;
+}
+
+function genDepTree(projectName, repo, tree = {}, hitProject = {}) {
+  if (!hitProject[projectName]) {
+    if (!tree[projectName]) {
+      tree[projectName] = {
+        parents: [],
+        children: []
+      };
+    }
+    hitProject[projectName] = true;
+    const project = repo.projects[projectName];
+    const {localDeps, localDevDeps} = getDeps(project);
+    const deps = localDeps.concat(localDevDeps);
+    for (const child of deps) {
+      if (!tree[child]) {
+        tree[child] = JSON.parse(JSON.stringify(tree[projectName]));
+      }
+      tree[child].parents.push(projectName);
+      if (tree[projectName].children.includes(child)) {
+        // throw Error('circular dependency');
+      } else {
+        tree[projectName].children.push(child);
+      }
+      ({tree, hitProject} = genDepTree(child, repo, tree, hitProject));
+    }
+  }
+  return {tree, hitProject};
 }
 
 function getDeps(project) {
-  const localDeps = JSON.parse(JSON.stringify(fallback(project.local_dependencies, {})));
-  const localDevDeps = JSON.parse(JSON.stringify(fallback(project.local_dev_dependencies, {})));
+  const localDeps = Object.keys(JSON.parse(JSON.stringify(fallback(project.local_dependencies, {}))));
+  const localDevDeps = Object.keys(JSON.parse(JSON.stringify(fallback(project.local_dev_dependencies, {}))));
   return {localDeps, localDevDeps};
 }
 
-function findMyDeps(seen, project, repo) {
-  const {localDeps, localDevDeps} = getDeps(project);
-  const projectNames = Object.assign({}, localDeps, localDevDeps);
-  for (const projectName in projectNames) {
-    if (!seen[projectName]) {
-      seen[projectName] = true;
-      const project = repo.projects[projectName];
-      seen = findMyDeps(seen, project, repo);
+function determineRunOrder(tree, done = {}) {
+  let i = 0;
+  let runOrder = [];
+  while (true) {
+    i++;
+    let ranOne = false;
+    for (const node in tree) {
+      const {parents, children} = tree[node];
+      if (children.length === 0) {
+        done[node] = true;
+      }
+      if (done[node]) {
+        runOrder.push(node);
+        delete tree[node];
+        ranOne = true;
+      }
+      for (const parent of parents) {
+        if (tree[parent]) {
+          const children = tree[parent].children;
+          const newChildren = [];
+          for (const child of children) {
+            if (!done[child]) {
+              newChildren.push(child);
+            }
+          }
+          tree[parent].children = newChildren;
+        }
+      }
+    }
+    if (!ranOne) {
+      return {runOrder, tree};
     }
   }
-  return seen;
 }

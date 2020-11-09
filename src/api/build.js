@@ -50,5 +50,5 @@ export default async function build(config, cwd) {
 }
 
 async function doHash(project) {
-  return await hashDirectory(project.local_path, ['node_modules', '.poly']);
+  return await hashDirectory(project.local_path, ['node_modules']);
 }
