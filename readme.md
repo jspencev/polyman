@@ -1,5 +1,5 @@
 # Polyman
-## Run a polyrepo like a monorepo
+Run a polyrepo like a monorepo
 
 ## WARNING
 This is an early proof of concept with BASIC functionality. Do not use this package except to play around.
@@ -34,6 +34,8 @@ Create a file ```repository.poly``` and add the following:
 ```
 
 ## Usage
+**Polyman is a wrapper around yarn. Everytime you would call yarn, call poly**
+
 ### Init a new polyman project
 ```poly init``` creates a new polyman project in the given directory.
 ```
@@ -45,7 +47,8 @@ Polyman will prompt choices about project setup. For now, polyman only supports 
 
 Note: Polyman automatically inits a git repository and adds dependencies to enforce [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). TODO: Options around this.
 
-**Polyman is essentially a wrapper around yarn. Everytime you would call yarn, call poly**
+### poly install (--production)
+Calls yarn install (with --prodction if flag given).
 
 ### poly add [dependency(ies)...]
 Adds dependencies to the current project.
@@ -56,7 +59,7 @@ Removes dependencies.
 ### poly local [add/remove] [dependency(ies)...]
 Adds/removes a project in this polyrepo as a dependency of the current project. If the project is locally available, it will be added as a file: dependency and yarn will symlink. If the project is not locally available, polyman will fallback to the git_repository url (TODO: this doesn't work yet). Dependency added scoped as @<my repository name>/<project>.
 
-## poly build (-f)
+### poly build (-f)
 Calls the build command if the directory has new content and packs the project into a tarball at .poly/build/ --force will force a rebuild.
 
 ### poly bootstrap (-a) (-f)

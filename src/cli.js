@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build, clone } from './api';
+import { init, add, local, remove, bootstrap, build, clone, install } from './api';
 import { yarn } from './util';
 import { getAppRootPath, launchBabelDebug } from '@carbon/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
@@ -50,6 +50,10 @@ const OPTIONS = {
     type: 'boolean',
     description: 'Add as peer dependency'
   },
+  production: {
+    type: 'boolean',
+    description: 'Install for production'
+  },
   tilde: {
     type: 'boolean',
     description: 'Installs most recent release of a package with the same minor version'
@@ -59,6 +63,7 @@ const OPTIONS = {
 async function cli() {
   let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
+    .command('install', 'Install a project')
     .command('add <dependency...>', 'Add dependency(ies) to your project', function(yargs) {
       yargs.positional('dependency', {
         description: 'Dependency to add'
@@ -164,6 +169,8 @@ async function cli() {
     }
 
     await init(true, true, nvmVersion, dotenv, envrc);
+  } else if (command === 'install') {
+    await install(config);
   } else if (command === 'add') {
     await add(argv.dependency, config);
   } else if (command === 'local') {
