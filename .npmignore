@@ -3,6 +3,8 @@
 # Refer to https://github.com/jspencev/commonignore for more info.
 
 # These rules apply in all .ignore files:
+/.poly/tmp
+/.poly/build
 /node_modules
 /.env
 /tmp.js

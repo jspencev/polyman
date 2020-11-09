@@ -1,30 +1,21 @@
-import { findPackage, yarn, moveFile, getAppRootPath } from '../../util';
-const thenify = require('thenify');
-const glob = thenify(require('glob'));
+import { moveFile } from '@carbon/node-util';
 const path = require('path');
-const thenifyAll = require('thenify-all');
-const fs = thenifyAll(require('fs'));
-
+import { yarn } from '../../util';
+import generateTarballName from './generateTarballName';
 
 /**
- * Packs the specified dependency into a tarball in /.poly/dependencies inside the calling project.
- * @param {String} depName - Dependency name.
- * @param {*} depProject - Dependency project object.
- * @param {String} cwd - Current working directory.
+ * Packs the specified project into a tarball at the tarball path.
+ * @param {*} project - Dependency project object.
+ * @param {String} tarballDir - Directory to place the new 
  * @returns {String} - Absolute path of the generated tarball.
  */
-export default async function pack(depName, depProject, cwd) {
-  const appRootPath = await getAppRootPath(cwd);
-  const tarballsToRemove = await glob(path.join(appRootPath, `./.poly/dependencies/${depName}*`));
-  for (const tarballPath of tarballsToRemove) {
-    await fs.unlink(tarballPath);
-  }
-  await yarn(`pack`, depProject.local_path);
-  const depPack = (await findPackage(depProject.local_path)).pack;
-  const depVersion = depPack.version;
-  const filename = `${depName}-v${depVersion}.tgz`;
-  const tarballPath = path.join(depProject.local_path, filename);
-  const newTarballPath = path.join(appRootPath, `./.poly/dependencies/${filename}`);
-  await moveFile(tarballPath, newTarballPath);
-  return newTarballPath;
+export default async function pack(project, tarballDir) {
+  // DO NOT TRY TO YARN PACK AT DIRECTORY. DRAGONS DOWN THAT PATH -JS
+  const projectDir = project.local_path;
+  await yarn('pack', projectDir);
+  const filename = await generateTarballName(projectDir);
+  const generatedTarball = path.join(projectDir, filename);
+  const finalTarball = path.join(tarballDir, filename);
+  await moveFile(generatedTarball, finalTarball);
+  return finalTarball;
 }

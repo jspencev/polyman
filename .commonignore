@@ -1,3 +1,5 @@
+/.poly/tmp
+/.poly/build
 /node_modules
 /.env
 /tmp.js

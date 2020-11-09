@@ -1,5 +1,7 @@
-import { init, add, local, remove, bootstrap, build, delocalize, localize, clone } from './api';
-import { yarn, findPackage } from './util';
+import { init, add, local, remove, bootstrap, build, clone } from './api';
+import { yarn } from './util';
+import { getAppRootPath, launchBabelDebug } from '@carbon/node-util';
+import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
@@ -30,14 +32,19 @@ const OPTIONS = {
     type: 'boolean',
     description: 'Force'
   },
+  inspect: {
+    type: 'boolean',
+    alias: 'debug',
+    description: 'Pass inspect to the node process'
+  },
+  "inspect-brk": {
+    type: 'boolean',
+    alias: 'debug-brk',
+    description: 'Pass inspect-brk to the node process'
+  },
   optional: {
     type: 'boolean',
     description: 'Add as optional dependency'
-  },
-  pack: {
-    alias: 'p',
-    type: 'boolean',
-    description: 'Pack into tarball before locally adding.'
   },
   peer: {
     type: 'boolean',
@@ -72,18 +79,6 @@ async function cli() {
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
-    .command('localize [dependency...]', 'Localize project dependencies.', function(yargs) {
-      yargs.positional('dependency', {
-        description: 'Projects to localize. If not passed, will localize all.',
-        default: []
-      })
-    })
-    .command('delocalize [dependency...]', 'Transforms all local dependencies into dependencies.', function(yargs) {
-      yargs.positional('dependency', {
-        description: 'Projects to delocalize. If not passed, will delocalize all.',
-        default: []
-      })
-    })
     .command('clone <dependency...>', 'Clones a non-local project.', function(yargs) {
       yargs.positional('dependency', {
         description: 'Project to add as dependency'
@@ -102,9 +97,14 @@ async function cli() {
   const argv = yargs.argv;
 
   let fileConfig;
+  let appRootPath;
   try {
-    const {packPath} = await findPackage();
-    const configPath = path.join(path.parse(packPath).dir, 'config.poly');
+    appRootPath = await getAppRootPath();
+  } catch (e) {
+    // not in a package
+  }
+  try {
+    const configPath = path.join(appRootPath, 'config.poly');
     fileConfig = JSON.parse(await fs.readFile(configPath));
   } catch(e) {
     // not found
@@ -174,10 +174,6 @@ async function cli() {
     await bootstrap(config);
   } else if (command === 'build') {
     await build(config);
-  } else if (command === 'localize') {
-    await localize(argv.dependency, config);
-  } else if (command === 'delocalize') {
-    await delocalize(argv.dependency, config);
   } else if (command === 'clone') {
     await clone(argv.dependency, config);
   } else if (command === 'node') {
@@ -187,8 +183,28 @@ async function cli() {
       console.log('executing with babel-node');
     }
     let args = process.argv.splice(3, process.argv.length);
-    args = ['exec', cmd].concat(args);
-    await yarn(args);
+    let newArgs = [];
+    for (const arg of args) {
+      if (!isOneOf(arg, '--inspect-brk', '--inspect', '--debug', '--debug-brk')) {
+        newArgs.push(arg);
+      }
+    }
+    args = newArgs;
+    if (config.babel && isOneTruthy(argv.inspect, argv.inspectBrk)) {
+      let fileToRun = args.shift();
+      fileToRun = path.join(process.cwd(), fileToRun);
+      const tmpFilePath = path.join(fallback(appRootPath, process.cwd()), './.poly/tmp');
+      const brk = argv.inspectBrk;
+      await launchBabelDebug(fileToRun, tmpFilePath, brk);
+    } else {
+      if (argv.inspect) {
+        args.unshift('--inspect');
+      } else if (argv.inspectBrk) {
+        args.unshift('--inspect-brk');
+      }
+      args = ['exec', cmd].concat(args);
+      await yarn(args);
+    }
   } else {
     await yarn(argv._);
   }

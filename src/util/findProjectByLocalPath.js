@@ -5,5 +5,5 @@ export default function findProjectByLocalPath(repo, localPath) {
       return {projectName, project};
     }
   }
-  return {projectName, project};
+  return false;
 }
