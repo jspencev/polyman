@@ -11,6 +11,7 @@
 /yarn-error.log
 
 # These rules apply just to .npmignore:
+/.poly/devDependencies
 /src
 /.commonignore
 /.envrc

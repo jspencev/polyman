@@ -46,13 +46,20 @@ export default async function local(projects, nextCdm, config, cwd) {
 
   const appRootPath = await getAppRootPath(cwd);
   const dependenciesDir = path.join(appRootPath, '.poly', 'dependencies');
+  const devDependenciesDir = path.join(appRootPath, '.poly', 'devDependencies');
   let deps = [];
   if (nextCdm === 'add') {
+    let useDir;
+    if (config.dev) {
+      useDir = devDependenciesDir;
+    } else {
+      useDir = dependenciesDir;
+    }
     for (const projectName of projects) {
       const project = repo.projects[projectName];
       const scopedName = `@${repo.name}/${projectName}`;
       if (project.tarball) {
-        let depPath = path.join(dependenciesDir, path.parse(project.tarball).base);
+        let depPath = path.join(useDir, path.parse(project.tarball).base);
         try {
           await fs.unlink(depPath);
         } catch (e) {}
@@ -71,8 +78,10 @@ export default async function local(projects, nextCdm, config, cwd) {
     let tarballsToRemove = [];
     for (const p of projects) {
       deps.push(`@${repo.name}/${p}`);
-      const files = await glob(path.join(appRootPath, `./.poly/dependencies/${p}*`));
-      tarballsToRemove = tarballsToRemove.concat(files);
+      const depTarballs = await glob(path.join(dependenciesDir, `${p}*`));
+      tarballsToRemove = tarballsToRemove.concat(depTarballs);
+      const devDepTarballs = await glob(path.join(devDependenciesDir, `${p}*`));
+      tarballsToRemove = tarballsToRemove.concat(devDepTarballs);
     }
     await remove(deps, cwd);
     for (const tarballPath of tarballsToRemove) {

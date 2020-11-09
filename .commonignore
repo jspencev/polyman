@@ -9,6 +9,7 @@
 /dist
 
 #! .npmignore
+/.poly/devDependencies
 /src
 /.commonignore
 /.envrc

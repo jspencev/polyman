@@ -19,10 +19,20 @@ export default async function build(config, cwd) {
   await deleteFromYarnCache(`@${repo.name}/${projectName}`);
   await cleanYarnLock(cwd);
 
-  await yarn('build', project.local_path);
   const tarballDir = path.join(packDir, '.poly', 'build');
-  const tarballPath = await pack(project, tarballDir);
-  const hash = await doHash(project);
+  let buildFailed = false;
+  let tarballPath;
+  let hash;
+  try {
+    await yarn('build', project.local_path);
+    hash = await doHash(project);
+    tarballPath = await pack(project, tarballDir);
+  } catch (e) {
+    buildFailed = true;
+    hash = 'failed';
+    tarballPath = project.tarball;
+  }
+  
   project.tarball = tarballPath;
   project.hash = hash;
   project = await generatePolymanDeps(repo, project);
@@ -31,6 +41,10 @@ export default async function build(config, cwd) {
 
   await deleteFromYarnCache(`@${repo.name}/${projectName}`);
   await cleanYarnLock(cwd);
+
+  if (buildFailed) {
+    throw Error('build failed');
+  }
 
   return true;
 }
