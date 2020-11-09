@@ -1,4 +1,4 @@
-import { findRepository } from '../util';
+import { findRepository, deleteFromYarnCache } from '../util';
 import { findPackage, getAppRootPath } from '@carbon/node-util';
 import add from './add';
 import remove from './remove';
@@ -39,6 +39,11 @@ export default async function local(projects, nextCdm, config, cwd) {
     } catch (e) {}
   }
 
+  for (const projectName of projects) {
+    const scopedName = `@${repo.name}/${projectName}`;
+    await deleteFromYarnCache(scopedName);
+  }
+
   const appRootPath = await getAppRootPath(cwd);
   const dependenciesDir = path.join(appRootPath, '.poly', 'dependencies');
   let deps = [];
@@ -75,5 +80,10 @@ export default async function local(projects, nextCdm, config, cwd) {
     }
   } else {
     throw Error('local command must be followed by either "add" or "remove"');
+  }
+
+  for (const projectName of projects) {
+    const scopedName = `@${repo.name}/${projectName}`;
+    await deleteFromYarnCache(scopedName);
   }
 }

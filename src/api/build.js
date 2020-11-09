@@ -1,4 +1,4 @@
-import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, cleanYarnLock } from '../util';
+import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, cleanYarnLock, deleteFromYarnCache } from '../util';
 import { findPackage } from '@carbon/node-util';
 const path = require('path');
 const thenifyAll = require('thenify-all');
@@ -16,6 +16,8 @@ export default async function build(config, cwd) {
       return false;
     }
   }
+  await deleteFromYarnCache(`@${repo.name}/${projectName}`);
+  await cleanYarnLock(cwd);
 
   await yarn('build', project.local_path);
   const tarballDir = path.join(packDir, '.poly', 'build');
@@ -26,7 +28,10 @@ export default async function build(config, cwd) {
   project = await generatePolymanDeps(repo, project);
   repo.projects[projectName] = project;
   await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
+
+  await deleteFromYarnCache(`@${repo.name}/${projectName}`);
   await cleanYarnLock(cwd);
+
   return true;
 }
 

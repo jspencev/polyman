@@ -4,6 +4,8 @@ import { findRepository, yarn, generatePolymanDeps, cleanYarnLock } from '../../
 import { findPackage } from '@carbon/node-util';
 
 export default async function addRemove(dependencies, type, config, cwd) {
+  await cleanYarnLock(cwd);
+
   const {repo, repoPath} = await findRepository(cwd);
   let {pack} = await findPackage(cwd);
   const projectName = pack.name;
