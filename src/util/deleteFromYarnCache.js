@@ -13,5 +13,9 @@ export default async function deleteFromYarnCache(name) {
     for (const file of files) {
       await rimraf(file);
     }
+
+    try {
+      await rimraf(path.join(process.env.YARN_CACHE_DIR, '.tmp'));
+    } catch (e) {}
   }
 }

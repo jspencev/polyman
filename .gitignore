@@ -4,6 +4,7 @@
 
 # These rules apply in all .ignore files:
 /.poly/tmp
+/.poly/build
 /node_modules
 /.env
 /tmp.js

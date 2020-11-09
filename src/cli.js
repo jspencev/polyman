@@ -1,14 +1,12 @@
-import { init, add, local, remove, bootstrap, build, delocalize, localize, clone } from './api';
+import { init, add, local, remove, bootstrap, build, clone } from './api';
 import { yarn } from './util';
-import { spawnChildProcess, getAppRootPath, writeFileIfNotExist, launchBabelDebug } from '@carbon/node-util';
+import { getAppRootPath, launchBabelDebug } from '@carbon/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
 const inquirer = require('inquirer');
-const thenify = require('thenify');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 const path = require('path');
 const _ = require('lodash');
-const rimraf = thenify(require('rimraf'));
 
 const OPTIONS = {
   all: {
@@ -47,11 +45,6 @@ const OPTIONS = {
   optional: {
     type: 'boolean',
     description: 'Add as optional dependency'
-  },
-  pack: {
-    alias: 'p',
-    type: 'boolean',
-    description: 'Pack into tarball before locally adding.'
   },
   peer: {
     type: 'boolean',
@@ -193,10 +186,6 @@ async function cli() {
     await bootstrap(config);
   } else if (command === 'build') {
     await build(config);
-  } else if (command === 'localize') {
-    await localize(argv.dependency, config);
-  } else if (command === 'delocalize') {
-    await delocalize(argv.dependency, config);
   } else if (command === 'clone') {
     await clone(argv.dependency, config);
   } else if (command === 'node') {

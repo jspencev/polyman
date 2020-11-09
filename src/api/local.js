@@ -1,8 +1,7 @@
-import { findRepository, deleteFromYarnCache } from '../util';
+import { findRepository } from '../util';
 import { findPackage, getAppRootPath } from '@carbon/node-util';
 import add from './add';
 import remove from './remove';
-import pack from './private/pack';
 const thenify = require('thenify');
 const glob = thenify(require('glob'));
 const path = require('path');
@@ -40,24 +39,31 @@ export default async function local(projects, nextCdm, config, cwd) {
     } catch (e) {}
   }
 
+  const appRootPath = await getAppRootPath(cwd);
+  const dependenciesDir = path.join(appRootPath, '.poly', 'dependencies');
   let deps = [];
   if (nextCdm === 'add') {
     for (const projectName of projects) {
       const project = repo.projects[projectName];
       const scopedName = `@${repo.name}/${projectName}`;
-      await deleteFromYarnCache(scopedName);
-      let projectPath;
-      if (config.pack) {
-        projectPath = await pack(projectName, project, cwd);
+      if (project.tarball) {
+        let depPath = path.join(dependenciesDir, path.parse(project.tarball).base);
+        try {
+          await fs.unlink(depPath);
+        } catch (e) {}
+        await fs.copyFile(project.tarball, depPath);
+        depPath = path.relative(appRootPath, depPath);
+        const dep = `${scopedName}@file:${depPath}`;
+        deps.push(dep);
       } else {
-        projectPath = project.local_path;
+        console.warn(`Project "${projectName}" does not have a tarball associated with it. You need to build the project with polyman and then call the add command again.`);
       }
-      deps.push(`${scopedName}@file:${projectPath}`);
     }
-    await add(deps, config, cwd);
+    if (deps.length > 0) {
+      await add(deps, config, cwd);
+    }
   } else if (nextCdm === 'remove') {
     let tarballsToRemove = [];
-    const appRootPath = await getAppRootPath(cwd);
     for (const p of projects) {
       deps.push(`@${repo.name}/${p}`);
       const files = await glob(path.join(appRootPath, `./.poly/dependencies/${p}*`));

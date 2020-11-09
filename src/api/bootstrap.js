@@ -1,9 +1,10 @@
-import { findRepository, hashDirectory, findProjectByLocalPath } from '../util';
+import { findRepository, findProjectByLocalPath } from '../util';
 import { fallback } from '@carbon/util';
 import { findPackage } from '@carbon/node-util';
 import local from './local';
 import build from './build';
 const path = require('path');
+const _ = require('lodash');
 
 export default async function bootstrap(config, cwd) {
   const {repo} = await findRepository(cwd);
@@ -41,38 +42,24 @@ export default async function bootstrap(config, cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       const {localDeps, localDevDeps} = getDeps(project);
-      config.dev = false;
-      await runLink(project, projectName, localDeps, repo, config);
-      config.dev = true;
-      await runLink(project, projectName, localDevDeps, repo, config);
-    }
-  }
-}
+      const allDeps = _.merge({}, localDeps, localDevDeps);
 
-async function runLink(project, projectName, deps, repo, config) {
-  const toLink = [];
-  for (const projectName in deps) {
-    const localPath = repo.projects[projectName].local_path
-    if (localPath) {
-      if (config.force) {
-        toLink.push(projectName);
-      } else {
-        const oldHash = deps[projectName];
-        const newHash = await hashDirectory(localPath, ['node_modules']);
-        if (oldHash !== newHash) {
-          toLink.push(projectName);
-        } else {
-          console.log(`Skipping link for "${projectName}": links are already up to date.`);
+      const depsToRemove = Object.keys(allDeps);
+      if (depsToRemove.length > 0) {
+        await local(depsToRemove, 'remove', config, project.local_path);
+
+        const depsToAdd = Object.keys(localDeps);
+        if (depsToAdd.length > 0) {
+          config.dev = false;
+          await local(depsToAdd, 'add', config, project.local_path);
+        }
+  
+        const devDepsToAdd = Object.keys(localDevDeps);
+        if (devDepsToAdd.length > 0) {
+          config.dev = true;
+          await local(devDepsToAdd, 'add', config, project.local_path);
         }
       }
-    }
-  }
-  if (toLink.length > 0) {
-    try {
-      await local(toLink, 'remove', config, project.local_path);
-      await local(toLink, 'add', config, project.local_path);
-    } catch (e) {
-      throw Error(`The project "${projectName}" does not exist at path "${project.local_path}"`);
     }
   }
 }

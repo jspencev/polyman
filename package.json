@@ -22,9 +22,11 @@
     "@babel/core": "^7.12.1",
     "@babel/node": "^7.12.1",
     "@babel/register": "^7.12.1",
-    "@carbon/node-util": "file:/Users/john/Dropbox/Code/carbon-new/node-util",
-    "@carbon/util": "file:/Users/john/Dropbox/Code/carbon-new/util",
+    "@carbon/node-util": "file:.poly/dependencies/node-util-v1.0.0.tgz",
+    "@carbon/util": "file:.poly/dependencies/util-v1.0.0.tgz",
+    "@yarnpkg/lockfile": "^1.1.0",
     "core-js": "^3.6.5",
+    "eol": "^0.9.1",
     "glob": "^7.1.6",
     "inquirer": "^7.3.3",
     "lodash": "^4.17.20",
@@ -37,7 +39,7 @@
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
-    "@carbon/commonignore-js": "npm:commonignore-js",
+    "@carbon/commonignore-js": "file:.poly/dependencies/commonignore-js-v1.0.2.tgz",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
     "babel-plugin-minify-dead-code-elimination": "^0.5.1",
@@ -45,7 +47,8 @@
     "commitizen": "^4.2.1",
     "cz-conventional-changelog": "^3.3.0",
     "git-cz": "^4.7.1",
-    "husky": "^4.3.0"
+    "husky": "^4.3.0",
+    "source-map": "^0.7.3"
   },
   "config": {
     "commitizen": {
