@@ -63,7 +63,7 @@ Calls the build command if the directory has new content and packs the project i
 Runs through every local polyman project and relinks all local project dependencies. --all will bootstrap all local projects. -f will force the builds and links to run.
 
 ### poly node [cmd...]
-Executes node in the environment of your app. If config.poly includes "babel": true, the command will be executed with babel-node. This works for debuggind as well.
+Executes node in the environment of your app. If config.poly includes "babel": true, the command will be executed with babel-node. This works for debugging as well.
 
 ### poly ...ANYTHING ELSE...
 All other commands are passed straight through to yarn.
