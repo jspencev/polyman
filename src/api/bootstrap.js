@@ -1,19 +1,14 @@
 import { findRepository, findProjectByLocalPath } from '../util';
-import { fallback } from '@carbon/util';
 import { findPackage } from '@carbon/node-util';
+import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
+const path = require('path');
 import local from './local';
 import build from './build';
-const path = require('path');
-const _ = require('lodash');
-
-const TYPES = {
-  REGULAR: 'regular',
-  DEV: 'dev'
-};
+const chalk = require('chalk');
 
 export default async function bootstrap(config, cwd) {
-  console.warn('DO NOT EXIT THIS PROCESS!');
-  console.warn('YOU COULD LOSE REFERENCE TO THE LOCAL DEPENDENCIES ON A PROJECT AND YOU WILL HAVE TO RE-ADD THEM MANUALLY!');
+  console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+  console.warn(chalk.yellow('PAIN AND SUFFERING AWAITS THOSE WHO EXIT THIS PROCESS.'));
 
   const {repo} = await findRepository(cwd);
   let packPath;
@@ -22,155 +17,138 @@ export default async function bootstrap(config, cwd) {
   } catch (e) {
     console.log(`Looks like you're not in a package. Bootstrapping all...`);
     config.all = true;
+    throw Error('Cannot bootstrap all yet. TODO');
   }
-  
+
   const projectDir = path.parse(packPath).dir;
   const me = findProjectByLocalPath(repo, projectDir);
   const myProjectName = me.projectName;
-  const myProject = me.project;
-  let projectNames;
-  if (config.bootstrap_round_2) {
-    projectNames = config.bootstrap_round_2.failed;
-  } else {
-    projectNames = Object.keys(repo.projects);
-  }
-  
-  if (!config.all) {
-    projectNames = findMyDeps(myProjectName, repo);
-  }
 
-  const failedBuilds = [];
-  for (const projectName of projectNames) {
-    const project = repo.projects[projectName];
-    if (project.local_path) {
-      try {
-        console.log(`Polyman: Building ${projectName}`);
-        console.log('-----------------------------------------------------------------');
-        await build(config, project.local_path);
-      } catch (e) {
-        console.error(`Project "${projectName}": build failed.`);
-        failedBuilds.push(projectName);
+  // get a list of all projects connected to my project
+  const connectedProjects = getConnectedProjects(myProjectName, repo, myProjectName, [myProjectName]);
+  const projectMap = {};
+  for (const connectedProject of connectedProjects) {
+    const deps = {};
+    const projectData = repo.projects[connectedProject];
+    deps.dependencies = Object.keys(fallback(projectData.local_dependencies, {}));
+    deps.dev_dependencies = Object.keys(fallback(projectData.local_dev_dependencies, {}));
+    deps.build_dependencies = Object.keys(fallback(projectData.build_dependencies, {}));
+    const buildDeps = [];
+    for (const buildDep of deps.build_dependencies) {
+      if (!deps.dependencies.includes(buildDep)) {
+        buildDeps.push(buildDep);
       }
     }
+    deps.build_dependencies = buildDeps;
+    projectMap[connectedProject] = deps;
+  }
 
-    console.log(`Polyman: Relinking ${projectName}`);
-    console.log('-----------------------------------------------------------------');
-    if (project.local_path) {
-      const {localDeps, localDevDeps} = getDeps(project);
-      const depsToRemove = localDeps.concat(localDevDeps);
-      if (depsToRemove.length > 0) {
-        console.warn('DO NOT EXIT THIS PROCESS!');
-        console.warn('YOU COULD LOSE REFERENCE TO THE LOCAL DEPENDENCIES ON A PROJECT AND YOU WILL HAVE TO RE-ADD THEM MANUALLY!');
+  const runOrder = getRunOrder(myProjectName, projectMap);
 
-        await local(depsToRemove, 'remove', config, project.local_path);
-
-        const depsToAdd = localDeps
-        if (depsToAdd.length > 0) {
-          config.dev = false;
-          await local(depsToAdd, 'add', config, project.local_path);
-        }
-  
-        const devDepsToAdd = localDevDeps;
-        if (devDepsToAdd.length > 0) {
-          config.dev = true;
-          await local(devDepsToAdd, 'add', config, project.local_path);
+  // remove all dependencies and build dependencies from each connected project
+  for (const projectName in projectMap) {
+    console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+    let depsToRemove = projectMap[projectName].dependencies.concat(projectMap[projectName].build_dependencies);
+    if (projectName === myProjectName) {
+      // also remove the dev dependencies for the project being bootstrapped
+      for (const devDep of projectMap[projectName].dev_dependencies) {
+        if (!depsToRemove.includes(devDep)) {
+          depsToRemove.push(devDep);
         }
       }
     }
+
+    if (depsToRemove.length !== 0) {
+      const localPath = repo.projects[projectName].local_path;
+      console.log(chalk.cyan('cd ' + localPath));
+      console.log(chalk.cyan('poly local remove ' + depsToRemove.join(' ')));
+      await local(depsToRemove, 'remove', config, localPath);
+    }
+  }
+
+  // add dependencies up the dependency tree and rebuild each connected project
+  for (const projectName of runOrder) {
+    console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+    const localPath = repo.projects[projectName].local_path;
+    console.log(chalk.cyan('cd ' + localPath));
+    const deps = projectMap[projectName].dependencies;
+    const buildDeps = projectMap[projectName].build_dependencies;
+    if (deps.length !== 0) {
+      console.log(chalk.cyan('poly local add ' + deps.join(' ')));
+      config.dev = false;
+      await local(deps, 'add', config, localPath);
+    }
+    if (buildDeps.length !== 0) {
+      console.log(chalk.cyan('poly local add --dev ' + buildDeps.join(' ')));
+      config.dev = true;
+      await local(buildDeps, 'add', config, localPath);
+    }
+    console.log(chalk.cyan('poly build'));
+    config.force = true;
+    await build(config, localPath);
+  }
+
+  console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+
+  // add dev dependencies for the project being bootstrapped. No need to rebuild.
+  const devDepsToAdd = [];
+  for (const devDep of projectMap[myProjectName].dev_dependencies) {
+    if (!projectMap[myProjectName].build_dependencies.includes(devDep)) {
+      devDepsToAdd.push(devDep);
+    }
+  }
+
+  if (devDepsToAdd.length !== 0) {
+    const localPath = repo.projects[myProjectName].local_path;
+    console.log(chalk.cyan('cd ' + localPath));
+    console.log(chalk.cyan('poly local add --dev ' + devDepsToAdd.join(' ')));
+    config.dev = true;
+    await local(devDepsToAdd, 'add', config, localPath);
   }
 }
 
-function findMyDeps(projectName, repo) {
-  let {tree} = genDepTree(projectName, repo);
- 
-  let finalRunOrder = [];
-  let runOrder = [];
-  let done = {};
-  const randomRun = [];
-  while(Object.keys(tree).length > 0) {
-    ({runOrder, tree} = determineRunOrder(tree, done));
-    finalRunOrder = finalRunOrder.concat(runOrder).concat(randomRun);
-    let least = 100000000;
-    let chosen;
-    for (const node in tree) {
-      const d = tree[node];
-      if (d.children.length <= least) {
-        chosen = node;
-        least = d.children.length;
+function getConnectedProjects(projectName, repo, myProjectName, connectedProjects) {
+  const project = repo.projects[projectName];
+  const deps = Object.keys(project.local_dependencies);
+  let allDeps = deps;
+  if (projectName === myProjectName) {
+    const devDeps = Object.keys(project.local_dev_dependencies);
+    allDeps = deps.concat(devDeps);
+  }
+  for (const dep of allDeps) {
+    if (!connectedProjects.includes(dep)) {
+      connectedProjects.push(dep);
+      connectedProjects = getConnectedProjects(dep, repo, myProjectName, connectedProjects);
+    }
+  }
+  return connectedProjects;
+}
+
+function getRunOrder(projectName, projectMap) {
+  let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, [projectName]);
+  runOrder = concatMoveToBack(runOrder, [projectName]);
+  for (const devDep of projectMap[projectName].dev_dependencies) {
+    const gro = generateRunOrder(devDep, projectMap, [devDep], hitProject);
+    hitProject = gro.hitProject;
+    for (const item of gro.runOrder) {
+      if (!runOrder.includes(item)) {
+        runOrder = concatMoveToBack(runOrder, [projectName]);
       }
     }
-    randomRun.push(chosen);
-    done = {};
-    done[chosen] = true;
   }
-  return finalRunOrder;
+
+  return runOrder;
 }
 
-function genDepTree(projectName, repo, tree = {}, hitProject = {}) {
+function generateRunOrder(projectName, projectMap, runOrder = [], hitProject = {}) {
   if (!hitProject[projectName]) {
-    if (!tree[projectName]) {
-      tree[projectName] = {
-        parents: [],
-        children: []
-      };
-    }
     hitProject[projectName] = true;
-    const project = repo.projects[projectName];
-    const {localDeps, localDevDeps} = getDeps(project);
-    const deps = localDeps.concat(localDevDeps);
-    for (const child of deps) {
-      if (!tree[child]) {
-        tree[child] = JSON.parse(JSON.stringify(tree[projectName]));
-      }
-      tree[child].parents.push(projectName);
-      if (tree[projectName].children.includes(child)) {
-        // throw Error('circular dependency');
-      } else {
-        tree[projectName].children.push(child);
-      }
-      ({tree, hitProject} = genDepTree(child, repo, tree, hitProject));
+
+    const deps = projectMap[projectName].dependencies.concat(projectMap[projectName].build_dependencies);
+    runOrder = concatMoveToFront(runOrder, deps);
+    for (const dep of deps) {
+      ({runOrder, hitProject} = generateRunOrder(dep, projectMap, runOrder, hitProject));
     }
   }
-  return {tree, hitProject};
-}
-
-function getDeps(project) {
-  const localDeps = Object.keys(JSON.parse(JSON.stringify(fallback(project.local_dependencies, {}))));
-  const localDevDeps = Object.keys(JSON.parse(JSON.stringify(fallback(project.local_dev_dependencies, {}))));
-  return {localDeps, localDevDeps};
-}
-
-function determineRunOrder(tree, done = {}) {
-  let i = 0;
-  let runOrder = [];
-  while (true) {
-    i++;
-    let ranOne = false;
-    for (const node in tree) {
-      const {parents, children} = tree[node];
-      if (children.length === 0) {
-        done[node] = true;
-      }
-      if (done[node]) {
-        runOrder.push(node);
-        delete tree[node];
-        ranOne = true;
-      }
-      for (const parent of parents) {
-        if (tree[parent]) {
-          const children = tree[parent].children;
-          const newChildren = [];
-          for (const child of children) {
-            if (!done[child]) {
-              newChildren.push(child);
-            }
-          }
-          tree[parent].children = newChildren;
-        }
-      }
-    }
-    if (!ranOne) {
-      return {runOrder, tree};
-    }
-  }
+  return {runOrder, hitProject};
 }

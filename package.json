@@ -25,6 +25,7 @@
     "@carbon/node-util": "file:.poly/dependencies/node-util-v1.0.0.tgz",
     "@carbon/util": "file:.poly/dependencies/util-v1.0.0.tgz",
     "@yarnpkg/lockfile": "^1.1.0",
+    "chalk": "^4.1.0",
     "core-js": "^3.6.5",
     "eol": "^0.9.1",
     "glob": "^7.1.6",
