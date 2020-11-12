@@ -1,4 +1,4 @@
-import { findRepository, findProjectByLocalPath } from '../util';
+import { findRepository, findProjectByLocalPath, getConnectedProjects } from '../util';
 import { findPackage } from '@carbon/node-util';
 import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
 const path = require('path');
@@ -25,7 +25,7 @@ export default async function bootstrap(config, cwd) {
   const myProjectName = me.projectName;
 
   // get a list of all projects connected to my project
-  const connectedProjects = getConnectedProjects(myProjectName, repo, myProjectName, [myProjectName]);
+  const connectedProjects = getConnectedProjects(myProjectName, repo, true, false, [myProjectName]);
   const projectMap = {};
   for (const connectedProject of connectedProjects) {
     const deps = {};
@@ -107,36 +107,25 @@ export default async function bootstrap(config, cwd) {
   }
 }
 
-function getConnectedProjects(projectName, repo, myProjectName, connectedProjects) {
-  const project = repo.projects[projectName];
-  const deps = Object.keys(project.local_dependencies);
-  let allDeps = deps;
-  if (projectName === myProjectName) {
-    const devDeps = Object.keys(project.local_dev_dependencies);
-    allDeps = deps.concat(devDeps);
-  }
-  for (const dep of allDeps) {
-    if (!connectedProjects.includes(dep)) {
-      connectedProjects.push(dep);
-      connectedProjects = getConnectedProjects(dep, repo, myProjectName, connectedProjects);
-    }
-  }
-  return connectedProjects;
-}
-
 function getRunOrder(projectName, projectMap) {
   let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, [projectName]);
   runOrder = concatMoveToBack(runOrder, [projectName]);
+  runOrder.pop();
+  hitProject[projectName] = false;
   for (const devDep of projectMap[projectName].dev_dependencies) {
     const gro = generateRunOrder(devDep, projectMap, [devDep], hitProject);
     hitProject = gro.hitProject;
     for (const item of gro.runOrder) {
       if (!runOrder.includes(item)) {
-        runOrder = concatMoveToBack(runOrder, [projectName]);
+        runOrder = concatMoveToBack(runOrder, [devDep]);
       }
     }
   }
 
+  if (runOrder[runOrder.length - 1] !== projectName) {
+    runOrder.push(projectName);
+  }
+  
   return runOrder;
 }
 

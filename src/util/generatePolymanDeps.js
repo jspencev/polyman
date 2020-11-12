@@ -2,6 +2,7 @@ import hashDirectory from './hashDirectory';
 const path = require('path');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
+import { doAllExist } from '@carbon/util';
 
 /**
  * Organizes dependencies in package.json into dependencies data for the polyman repository
@@ -9,19 +10,23 @@ const fs = thenifyAll(require('fs'));
  * @param {*} project - Project object to organize dependencies for
  * @returns {*} - Project updated with organized dependencies
  */
-export default async function generatePolymanDeps(repo, project) {
-  if (project.local_path) {
-    const packPath = path.join(project.local_path, 'package.json');
-    const pack = JSON.parse((await fs.readFile(packPath)).toString());
-
-    const orgDeps = await orgDependencies(repo, pack.dependencies);
-    const orgDevDeps = await orgDependencies(repo, pack.devDependencies);
-    project.dependencies = orgDeps.deps;
-    project.dev_dependencies = orgDevDeps.deps;
-    project.local_dependencies = orgDeps.localDeps;
-    project.local_dev_dependencies = orgDevDeps.localDeps;
-    return project;
+export default async function generatePolymanDeps(repo, project, pack = null) {
+  if (!project.local_path) {
+    throw Error('Cannot generate dependencies for a non-local project');
   }
+  
+  const packPath = path.join(project.local_path, 'package.json');
+  if (!doAllExist(pack)) {
+    pack = JSON.parse((await fs.readFile(packPath)).toString());
+  }
+
+  const orgDeps = await orgDependencies(repo, pack.dependencies);
+  const orgDevDeps = await orgDependencies(repo, pack.devDependencies);
+  project.dependencies = orgDeps.deps;
+  project.dev_dependencies = orgDevDeps.deps;
+  project.local_dependencies = orgDeps.localDeps;
+  project.local_dev_dependencies = orgDevDeps.localDeps;
+  return project;
 }
 
 async function orgDependencies(repo, dependencies) {

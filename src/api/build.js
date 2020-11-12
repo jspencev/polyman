@@ -1,23 +1,25 @@
-import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, cleanYarnLock, deleteFromYarnCache } from '../util';
+import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, isRepoProject, writeJSONToFile, getLocalTarballPath } from '../util';
 import { findPackage } from '@carbon/node-util';
 const path = require('path');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 import pack from './private/pack';
+const _ = require('lodash');
 
 export default async function build(config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
-  const {packPath} = await findPackage(cwd);
+  const fp = await findPackage(cwd);
+  const myPack = fp.pack;
+  const originalPack = _.cloneDeep(myPack);
+  const packPath = fp.packPath;
   const packDir = path.parse(packPath).dir;
   let {project, projectName} = findProjectByLocalPath(repo, packDir);
-  if (!config.force) {
+  if (!config.force && false) { // for now, builds always run
     const hash = await doHash(project);
     if (project.hash === hash) {
       return false;
     }
   }
-  await deleteFromYarnCache(`@${repo.name}/${projectName}`);
-  await cleanYarnLock(cwd);
 
   const tarballDir = path.join(packDir, '.poly', 'build');
   let buildFailed = false;
@@ -25,22 +27,37 @@ export default async function build(config, cwd) {
   let hash;
   try {
     await yarn('build', project.local_path);
-    hash = await doHash(project);
     tarballPath = await pack(project, tarballDir);
+
+    for (const dep in myPack.dependencies) {
+      if (isRepoProject(dep, repo)) {
+        delete myPack.dependencies[dep];
+      }
+    }
+    for (const devDep in myPack.devDependencies) {
+      if (isRepoProject(devDep, repo)) {
+        delete myPack.devDependencies[devDep];
+      }
+    }
+    await writeJSONToFile(packPath, myPack);
+    let localTarballDir = getLocalTarballPath(projectName, repo, repoPath);
+    localTarballDir = path.parse(localTarballDir).dir;
+    await pack(project, localTarballDir);
+    hash = await doHash(project);
   } catch (e) {
     buildFailed = true;
     hash = 'failed';
     tarballPath = project.tarball;
   }
   
+  // revert package.json to original
+  await writeJSONToFile(packPath, originalPack);
+
   project.tarball = tarballPath;
   project.hash = hash;
   project = await generatePolymanDeps(repo, project);
   repo.projects[projectName] = project;
-  await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
-
-  await deleteFromYarnCache(`@${repo.name}/${projectName}`);
-  await cleanYarnLock(cwd);
+  await writeJSONToFile(repoPath, repo);
 
   if (buildFailed) {
     throw Error('build failed');

@@ -176,7 +176,7 @@ async function cli() {
   } else if (command === 'local') {
     await local(argv.dependency, argv.cmd, config);
   } else if (command === 'remove') {
-    await remove(argv.dependency);
+    await remove(argv.dependency, config);
   } else if (command === 'bootstrap') {
     await bootstrap(config);
   } else if (command === 'build') {

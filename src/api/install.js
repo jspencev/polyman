@@ -5,7 +5,7 @@ export default async function install(config, cwd = process.cwd()) {
   const {repo} = await findRepository(cwd);
   const {pack} = await findPackage(cwd);
   const depName = `@${repo.name}/${pack.name}`;
-  await deleteFromYarnCache(depName);
+  await deleteFromYarnCache();
   await cleanYarnLock(cwd);
 
   const yarnCmd = ['install'];
@@ -14,6 +14,6 @@ export default async function install(config, cwd = process.cwd()) {
   }
   await yarn(yarnCmd, cwd);
 
-  await deleteFromYarnCache(depName);
+  await deleteFromYarnCache();
   await cleanYarnLock(cwd);
 }

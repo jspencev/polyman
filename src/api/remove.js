@@ -1,5 +1,5 @@
 import addRemove from './private/addRemove';
 
-export default async function remove(dependencies, cwd) {
-  await addRemove(dependencies, 'remove', {}, cwd);
+export default async function remove(dependencies, config, cwd) {
+  await addRemove(dependencies, 'remove', config, cwd);
 }
