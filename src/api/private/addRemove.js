@@ -14,14 +14,15 @@ export default async function addRemove(dependencies, type, config, cwd) {
   }
 
   const appRootPath = await getAppRootPath(cwd);
-  const {repo, repoPath} = await findRepository(cwd);
 
-  // pull the production package
+  // pull the repo and the production package
+  const {repo, repoPath} = await findRepository(cwd);
   const fp = await findPackage(cwd);
   const prodPack = fp.pack;
   const packPath = fp.packPath;
   const originalPack = _.cloneDeep(prodPack);
 
+  // verify that this package is a project of the repository
   const myProjectName = prodPack.name;
   if (!isRepoProject(myProjectName, repo)) {
     throw Error(`We could not find project "${myProjectName}" in the repository file`);
@@ -35,7 +36,6 @@ export default async function addRemove(dependencies, type, config, cwd) {
     for (const d in premodLocalDeps) {
       await checkTarballs(d, repo, repoPath);
     }
-    await writeJSONToFile(packPath, premodLocalPack);
     const toRemove = Object.keys(premodLocalDeps);
 
     if (config.local) {  
@@ -80,6 +80,9 @@ export default async function addRemove(dependencies, type, config, cwd) {
     // hoist local dependency tree into package dependencies. This always happens because we do not want yarn to try to re-install "missing" packages.
     const postmodHoist = hoistLocalDependencies(prodPack, repo, repoPath);
     const postmodLocalDeps = postmodHoist.localDependencies;
+
+    // write the premodified local package.json
+    await writeJSONToFile(packPath, premodLocalPack);
   
     // either add all local dependencies or run the yarn command
     if (config.local) {

@@ -1,4 +1,4 @@
-import { findRepository, findProjectByLocalPath, getConnectedProjects } from '../util';
+import { findRepository, findProjectByLocalPath, getConnectedProjects, generatePolymanDeps } from '../util';
 import { findPackage } from '@carbon/node-util';
 import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
 const path = require('path');
@@ -12,8 +12,9 @@ export default async function bootstrap(config, cwd) {
 
   const {repo} = await findRepository(cwd);
   let packPath;
+  let pack;
   try {
-    ({packPath} = await findPackage(cwd));
+    ({pack, packPath} = await findPackage(cwd));
   } catch (e) {
     console.log(`Looks like you're not in a package. Bootstrapping all...`);
     config.all = true;
@@ -23,6 +24,9 @@ export default async function bootstrap(config, cwd) {
   const projectDir = path.parse(packPath).dir;
   const me = findProjectByLocalPath(repo, projectDir);
   const myProjectName = me.projectName;
+
+  // ensure that the repository project dependencies and the starting package dependencies match
+  repo.projects[myProjectName] = await generatePolymanDeps(repo, repo.projects[myProjectName], pack);
 
   // get a list of all projects connected to my project
   const connectedProjects = getConnectedProjects(myProjectName, repo, true, false, [myProjectName]);
