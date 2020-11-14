@@ -1,4 +1,4 @@
-import { findRepository } from '../util'
+import { findRepository, getYarnCacheDir } from '../util'
 import { doAllExist } from '@carbon/util';
 const thenify = require('thenify');
 const rimraf = thenify(require('rimraf'));
@@ -6,7 +6,8 @@ const glob = thenify(require('glob'));
 const path = require('path');
 
 export default async function deleteFromYarnCache(name = null) {
-  if (process.env.YARN_CACHE_DIR) {
+  const yarnCacheDir = await getYarnCacheDir();
+  if (yarnCacheDir) {
     if (doAllExist(name)) {
       if (name.charAt(0) === '@') {
         name = name.split('/').join('-');
@@ -15,14 +16,16 @@ export default async function deleteFromYarnCache(name = null) {
       const {repo} = await findRepository();
       name = '@' + repo.name;
     }
-    const pattern = path.join(process.env.YARN_CACHE_DIR, `npm-${name}*`);
+    const pattern = path.join(yarnCacheDir, `npm-${name}*`);
     const files = await glob(pattern);
     for (const file of files) {
       await rimraf(file);
     }
 
     try {
-      await rimraf(path.join(process.env.YARN_CACHE_DIR, '.tmp'));
-    } catch (e) {}
+      await rimraf(path.join(yarnCacheDir, '.tmp'));
+    } catch (e) {
+      // do nothing
+    }
   }
 }

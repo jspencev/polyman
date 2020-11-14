@@ -6,6 +6,7 @@ import findRepository from './findRepository';
 import generatePolymanDeps from './generatePolymanDeps';
 import getConnectedProjects from './getConnectedProjects';
 import getLocalTarballPath from './getLocalTarballPath';
+import getYarnCacheDir from './getYarnCacheDir';
 import hashDirectory from './hashDirectory';
 import isRepoProject from './isRepoProject';
 import writeJSONToFile from './writeJSONToFile';
@@ -20,6 +21,7 @@ export {
   generatePolymanDeps,
   getConnectedProjects,
   getLocalTarballPath,
+  getYarnCacheDir,
   hashDirectory,
   isRepoProject,
   writeJSONToFile,
