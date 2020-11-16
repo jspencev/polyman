@@ -10,6 +10,10 @@ import { deleteFromYarnCache, yarn, findRepository, cleanYarnLock } from './src/
     await yarn('global remove polyman');
   } catch (e) {}
 
+  await cleanYarnLock();
+  await cleanYarnLock(process.env.YARN_GLOBAL_DIR, repo);
+  await deleteFromYarnCache('polyman');
+
   const tarballPath = repo.projects.polyman.tarball;
   if (tarballPath) {
     await yarn(`global add file:${tarballPath}`);

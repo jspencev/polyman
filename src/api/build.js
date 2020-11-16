@@ -28,6 +28,7 @@ export default async function build(config, cwd) {
   try {
     await yarn('build', project.local_path);
     tarballPath = await pack(project, tarballDir);
+    repo.projects[projectName].tarball = tarballPath;
 
     for (const dep in myPack.dependencies) {
       if (isRepoProject(dep, repo)) {
@@ -48,6 +49,7 @@ export default async function build(config, cwd) {
     buildFailed = true;
     hash = 'failed';
     tarballPath = project.tarball;
+    console.log(e);
   }
   
   // revert package.json to original

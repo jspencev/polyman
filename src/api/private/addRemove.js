@@ -223,8 +223,8 @@ async function checkTarballs(projectName, repo, repoPath) {
 }
 
 async function copyFile(oldLocation, newLocation) {
-  const data = await fs.readFile(oldLocation);
-  await writeFileIfNotExist(newLocation, data);
+  await writeFileIfNotExist(newLocation, '');
+  await fs.copyFile(oldLocation, newLocation);
 }
 
 async function rollback(pack, packPath) {

@@ -2,7 +2,6 @@ import { findRepository, findProjectByLocalPath, getConnectedProjects, generateP
 import { findPackage } from '@carbon/node-util';
 import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
 const path = require('path');
-import local from './local';
 import build from './build';
 import relink from './relink';
 const chalk = require('chalk');
@@ -65,13 +64,21 @@ export default async function bootstrap(config, cwd) {
 
 function getRunOrder(projectName, projectMap) {
   let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, []);
+  if (runOrder[runOrder.length - 1] !== projectName) {
+    runOrder.push(projectName);
+  }
+
   hitProject[projectName] = false;
   for (const devDep of projectMap[projectName].dev_dependencies) {
     const gro = generateRunOrder(devDep, projectMap, [devDep], hitProject);
     hitProject = gro.hitProject;
-    for (const item of gro.runOrder) {
+    const ro = gro.runOrder;
+    if (ro[ro.length - 1] !== devDep) {
+      ro.push(devDep);
+    }
+    for (const item of ro) {
       if (!runOrder.includes(item)) {
-        runOrder = concatMoveToBack(runOrder, [devDep]);
+        runOrder = concatMoveToBack(runOrder, [item]);
       }
     }
   }
@@ -79,8 +86,6 @@ function getRunOrder(projectName, projectMap) {
   if (runOrder[runOrder.length - 1] !== projectName) {
     runOrder.push(projectName);
   }
-
-  console.log(runOrder);
   
   return runOrder;
 }
