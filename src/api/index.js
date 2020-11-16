@@ -5,6 +5,7 @@ import clone from './clone';
 import init from './init';
 import install from './install';
 import local from './local';
+import relink from './relink';
 import remove from './remove';
 
 const commands = {
@@ -15,6 +16,7 @@ const commands = {
   init,
   install,
   local,
+  relink,
   remove
 };
 
@@ -26,6 +28,7 @@ export {
   init,
   install,
   local,
+  relink,
   remove
 };
 

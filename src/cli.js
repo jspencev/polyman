@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build, clone, install } from './api';
+import { init, add, local, remove, bootstrap, build, clone, install, relink } from './api';
 import { yarn } from './util';
 import { getAppRootPath, launchBabelDebug } from '@carbon/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
@@ -84,6 +84,7 @@ async function cli() {
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
+    .command('relink', `Uninstalls and reinstalls all local dependencies.`)
     .command('clone <dependency...>', 'Clones a non-local project.', function(yargs) {
       yargs.positional('dependency', {
         description: 'Project to add as dependency'
@@ -181,6 +182,8 @@ async function cli() {
     await bootstrap(config);
   } else if (command === 'build') {
     await build(config);
+  } else if (command === 'relink') {
+    await relink(config);
   } else if (command === 'clone') {
     await clone(argv.dependency, config);
   } else if (command === 'node') {

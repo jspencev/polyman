@@ -4,6 +4,7 @@ import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
 const path = require('path');
 import local from './local';
 import build from './build';
+import relink from './relink';
 const chalk = require('chalk');
 
 export default async function bootstrap(config, cwd) {
@@ -49,72 +50,21 @@ export default async function bootstrap(config, cwd) {
 
   const runOrder = getRunOrder(myProjectName, projectMap);
 
-  // remove all dependencies and build dependencies from each connected project
-  for (const projectName in projectMap) {
-    console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
-    let depsToRemove = projectMap[projectName].dependencies.concat(projectMap[projectName].build_dependencies);
-    if (projectName === myProjectName) {
-      // also remove the dev dependencies for the project being bootstrapped
-      for (const devDep of projectMap[projectName].dev_dependencies) {
-        if (!depsToRemove.includes(devDep)) {
-          depsToRemove.push(devDep);
-        }
-      }
-    }
-
-    if (depsToRemove.length !== 0) {
-      const localPath = repo.projects[projectName].local_path;
-      console.log(chalk.cyan('cd ' + localPath));
-      console.log(chalk.cyan('poly local remove ' + depsToRemove.join(' ')));
-      await local(depsToRemove, 'remove', config, localPath);
-    }
-  }
-
   // add dependencies up the dependency tree and rebuild each connected project
   for (const projectName of runOrder) {
     console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
     const localPath = repo.projects[projectName].local_path;
     console.log(chalk.cyan('cd ' + localPath));
-    const deps = projectMap[projectName].dependencies;
-    const buildDeps = projectMap[projectName].build_dependencies;
-    if (deps.length !== 0) {
-      console.log(chalk.cyan('poly local add ' + deps.join(' ')));
-      config.dev = false;
-      await local(deps, 'add', config, localPath);
-    }
-    if (buildDeps.length !== 0) {
-      console.log(chalk.cyan('poly local add --dev ' + buildDeps.join(' ')));
-      config.dev = true;
-      await local(buildDeps, 'add', config, localPath);
-    }
+    console.log(chalk.cyan('poly relink'));
+    await relink({}, localPath);
     console.log(chalk.cyan('poly build'));
     config.force = true;
     await build(config, localPath);
   }
-
-  console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
-
-  // add dev dependencies for the project being bootstrapped. No need to rebuild.
-  const devDepsToAdd = [];
-  for (const devDep of projectMap[myProjectName].dev_dependencies) {
-    if (!projectMap[myProjectName].build_dependencies.includes(devDep)) {
-      devDepsToAdd.push(devDep);
-    }
-  }
-
-  if (devDepsToAdd.length !== 0) {
-    const localPath = repo.projects[myProjectName].local_path;
-    console.log(chalk.cyan('cd ' + localPath));
-    console.log(chalk.cyan('poly local add --dev ' + devDepsToAdd.join(' ')));
-    config.dev = true;
-    await local(devDepsToAdd, 'add', config, localPath);
-  }
 }
 
 function getRunOrder(projectName, projectMap) {
-  let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, [projectName]);
-  runOrder = concatMoveToBack(runOrder, [projectName]);
-  runOrder.pop();
+  let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, []);
   hitProject[projectName] = false;
   for (const devDep of projectMap[projectName].dev_dependencies) {
     const gro = generateRunOrder(devDep, projectMap, [devDep], hitProject);
@@ -129,6 +79,8 @@ function getRunOrder(projectName, projectMap) {
   if (runOrder[runOrder.length - 1] !== projectName) {
     runOrder.push(projectName);
   }
+
+  console.log(runOrder);
   
   return runOrder;
 }
