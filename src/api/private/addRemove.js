@@ -139,6 +139,12 @@ export default async function addRemove(dependencies, type, config, cwd) {
     await rimraf(dependenciesDir);
     await rimraf(devDependenciesDir)
     const tmpPack = (await findPackage(cwd)).pack;
+    if (!prodPack.dependencies) {
+      prodPack.dependencies = {};
+    }
+    if (!prodPack.devDependencies) {
+      prodPack.devDependencies = {};
+    }
     for (const dep in tmpPack.dependencies) {
       if (!isRepoProject(dep, repo)) {
         prodPack.dependencies[dep] = tmpPack.dependencies[dep];

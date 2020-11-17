@@ -11,7 +11,8 @@
   },
   "bin": {
     "polyman": "bin/polyman",
-    "poly": "bin/polyman"
+    "poly": "bin/polyman",
+    "polx": "bin/polx"
   },
   "scripts": {
     "build": "babel src --out-dir dist",

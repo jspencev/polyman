@@ -60,7 +60,7 @@ const OPTIONS = {
   }
 };
 
-async function cli() {
+async function cli(exec = false) {
   let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
     .command('install', 'Install a project')
@@ -102,6 +102,11 @@ async function cli() {
     .help();
   const argv = yargs.argv;
 
+  if (exec) {
+    await yarn(['exec'].concat(argv._));
+    return;
+  }
+
   let fileConfig;
   let appRootPath;
   try {
@@ -126,7 +131,6 @@ async function cli() {
 
   const config = _.merge({}, defaultConfig, fileConfig, argvConfig);
 
-  // const command
   const command = argv._[0];
   if (command === 'init') {
     let questions = [{
