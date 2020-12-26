@@ -59,11 +59,17 @@ Removes dependencies.
 ### poly local [add/remove] [dependency(ies)...]
 Adds/removes a project in this polyrepo as a dependency of the current project. If the project is locally available, it will be added as a file: dependency and yarn will symlink. If the project is not locally available, polyman will fallback to the git_repository url (TODO: this doesn't work yet). Dependency added scoped as @<my repository name>/<project>.
 
-### poly build (-f)
-Calls the build command if the directory has new content and packs the project into a tarball at .poly/build/ --force will force a rebuild.
+### poly build
+Calls the build command if the directory has new content and packs the project into a tarball at .poly/build/ for export and a different tarball at the repository level that is used by polyman for local linking.
 
-### poly bootstrap (-a) (-f)
-Runs through every local polyman project and relinks all local project dependencies. --all will bootstrap all local projects. -f will force the builds and links to run.
+### poly bootstrap
+Runs through every local polyman project and relinks all local project dependencies.
+
+### poly relink
+Relinks all local dependiencies without attempting to build each local project.
+
+### poly clone
+Clones a non-local project of the repository into a local folder. Does not updated local projects to reference the new local project.
 
 ### poly node [cmd...]
 Executes node in the environment of your app. If config.poly includes "babel": true, the command will be executed with babel-node. This works for debugging as well.
