@@ -1,5 +1,5 @@
 # Polyman
-## Run a polyrepo like a monorepo
+Run a polyrepo like a monorepo
 
 ## WARNING
 This is an early proof of concept with BASIC functionality. Do not use this package except to play around.
@@ -34,6 +34,8 @@ Create a file ```repository.poly``` and add the following:
 ```
 
 ## Usage
+**Polyman is a wrapper around yarn. Everytime you would call yarn, call poly**
+
 ### Init a new polyman project
 ```poly init``` creates a new polyman project in the given directory.
 ```
@@ -45,7 +47,8 @@ Polyman will prompt choices about project setup. For now, polyman only supports 
 
 Note: Polyman automatically inits a git repository and adds dependencies to enforce [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). TODO: Options around this.
 
-**Polyman is essentially a wrapper around yarn. Everytime you would call yarn, call poly**
+### poly install (--production)
+Calls yarn install (with --prodction if flag given).
 
 ### poly add [dependency(ies)...]
 Adds dependencies to the current project.
@@ -56,11 +59,17 @@ Removes dependencies.
 ### poly local [add/remove] [dependency(ies)...]
 Adds/removes a project in this polyrepo as a dependency of the current project. If the project is locally available, it will be added as a file: dependency and yarn will symlink. If the project is not locally available, polyman will fallback to the git_repository url (TODO: this doesn't work yet). Dependency added scoped as @<my repository name>/<project>.
 
-## poly build (-f)
-Calls the build command if the directory has new content and packs the project into a tarball at .poly/build/ --force will force a rebuild.
+### poly build
+Calls the build command if the directory has new content and packs the project into a tarball at .poly/build/ for export and a different tarball at the repository level that is used by polyman for local linking.
 
-### poly bootstrap (-a) (-f)
-Runs through every local polyman project and relinks all local project dependencies. --all will bootstrap all local projects. -f will force the builds and links to run.
+### poly bootstrap
+Runs through every local polyman project and relinks all local project dependencies.
+
+### poly relink
+Relinks all local dependiencies without attempting to build each local project.
+
+### poly clone
+Clones a non-local project of the repository into a local folder. Does not updated local projects to reference the new local project.
 
 ### poly node [cmd...]
 Executes node in the environment of your app. If config.poly includes "babel": true, the command will be executed with babel-node. This works for debugging as well.

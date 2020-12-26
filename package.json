@@ -11,7 +11,8 @@
   },
   "bin": {
     "polyman": "bin/polyman",
-    "poly": "bin/polyman"
+    "poly": "bin/polyman",
+    "polx": "bin/polx"
   },
   "scripts": {
     "build": "babel src --out-dir dist",
@@ -25,6 +26,7 @@
     "@carbon/node-util": "file:.poly/dependencies/node-util-v1.0.0.tgz",
     "@carbon/util": "file:.poly/dependencies/util-v1.0.0.tgz",
     "@yarnpkg/lockfile": "^1.1.0",
+    "chalk": "^4.1.0",
     "core-js": "^3.6.5",
     "eol": "^0.9.1",
     "glob": "^7.1.6",
@@ -34,12 +36,13 @@
     "rimraf": "^3.0.2",
     "thenify": "^3.3.1",
     "thenify-all": "^1.6.0",
-    "yargs": "^16.0.3"
+    "yargs": "^16.0.3",
+    "yarn": "^1.22.10"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
-    "@carbon/commonignore-js": "file:.poly/dependencies/commonignore-js-v1.0.2.tgz",
+    "@carbon/commonignore-js": "file:.poly/devDependencies/commonignore-js-v1.0.4.tgz",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
     "babel-plugin-minify-dead-code-elimination": "^0.5.1",

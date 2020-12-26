@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build, clone } from './api';
+import { init, add, local, remove, bootstrap, build, clone, install, relink } from './api';
 import { yarn } from './util';
 import { getAppRootPath, launchBabelDebug } from '@carbon/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
@@ -50,15 +50,20 @@ const OPTIONS = {
     type: 'boolean',
     description: 'Add as peer dependency'
   },
+  production: {
+    type: 'boolean',
+    description: 'Install for production'
+  },
   tilde: {
     type: 'boolean',
     description: 'Installs most recent release of a package with the same minor version'
   }
 };
 
-async function cli() {
+async function cli(exec = false) {
   let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
+    .command('install', 'Install a project')
     .command('add <dependency...>', 'Add dependency(ies) to your project', function(yargs) {
       yargs.positional('dependency', {
         description: 'Dependency to add'
@@ -79,6 +84,7 @@ async function cli() {
     })
     .command('bootstrap', 'Relink dependencies. --all relinks every project.')
     .command('build', 'Build the current project. --force forces a rebuild.')
+    .command('relink', `Uninstalls and reinstalls all local dependencies.`)
     .command('clone <dependency...>', 'Clones a non-local project.', function(yargs) {
       yargs.positional('dependency', {
         description: 'Project to add as dependency'
@@ -95,6 +101,11 @@ async function cli() {
   yargs = yargs.demandCommand()
     .help();
   const argv = yargs.argv;
+
+  if (exec) {
+    await yarn(['exec'].concat(argv._));
+    return;
+  }
 
   let fileConfig;
   let appRootPath;
@@ -120,7 +131,6 @@ async function cli() {
 
   const config = _.merge({}, defaultConfig, fileConfig, argvConfig);
 
-  // const command
   const command = argv._[0];
   if (command === 'init') {
     let questions = [{
@@ -164,16 +174,20 @@ async function cli() {
     }
 
     await init(true, true, nvmVersion, dotenv, envrc);
+  } else if (command === 'install') {
+    await install(config);
   } else if (command === 'add') {
     await add(argv.dependency, config);
   } else if (command === 'local') {
     await local(argv.dependency, argv.cmd, config);
   } else if (command === 'remove') {
-    await remove(argv.dependency);
+    await remove(argv.dependency, config);
   } else if (command === 'bootstrap') {
     await bootstrap(config);
   } else if (command === 'build') {
     await build(config);
+  } else if (command === 'relink') {
+    await relink(config);
   } else if (command === 'clone') {
     await clone(argv.dependency, config);
   } else if (command === 'node') {

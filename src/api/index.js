@@ -3,7 +3,9 @@ import bootstrap from './bootstrap';
 import build from './build';
 import clone from './clone';
 import init from './init';
+import install from './install';
 import local from './local';
+import relink from './relink';
 import remove from './remove';
 
 const commands = {
@@ -12,7 +14,9 @@ const commands = {
   build,
   clone,
   init,
+  install,
   local,
+  relink,
   remove
 };
 
@@ -22,7 +26,9 @@ export {
   build,
   clone,
   init,
+  install,
   local,
+  relink,
   remove
 };
 

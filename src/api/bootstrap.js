@@ -1,84 +1,104 @@
-import { findRepository, findProjectByLocalPath } from '../util';
-import { fallback } from '@carbon/util';
+import { findRepository, findProjectByLocalPath, getConnectedProjects, generatePolymanDeps } from '../util';
 import { findPackage } from '@carbon/node-util';
-import local from './local';
-import build from './build';
+import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
 const path = require('path');
-const _ = require('lodash');
+import build from './build';
+import relink from './relink';
+const chalk = require('chalk');
 
 export default async function bootstrap(config, cwd) {
+  console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+  console.warn(chalk.yellow('PAIN AND SUFFERING AWAITS THOSE WHO EXIT THIS PROCESS.'));
+
   const {repo} = await findRepository(cwd);
   let packPath;
+  let pack;
   try {
-    ({packPath} = await findPackage(cwd));
+    ({pack, packPath} = await findPackage(cwd));
   } catch (e) {
     console.log(`Looks like you're not in a package. Bootstrapping all...`);
     config.all = true;
-  }
-  
-  let projectNames = Object.keys(repo.projects);
-
-  if (!config.all) {
-    const projectDir = path.parse(packPath).dir;
-    const {projectName, project} = findProjectByLocalPath(repo, projectDir);
-    let seen = {};
-    seen[projectName] = true;
-    seen = findMyDeps(seen, project, repo);
-    projectNames = Object.keys(seen);
+    throw Error('Cannot bootstrap all yet. TODO');
   }
 
-  for (const projectName of projectNames) {
-    const project = repo.projects[projectName];
-    if (project.local_path) {
-      try {
-        await build(config, project.local_path);
-      } catch (e) {
-        throw Error(`Project "${projectName}": build failed`);
+  const projectDir = path.parse(packPath).dir;
+  const me = findProjectByLocalPath(repo, projectDir);
+  const myProjectName = me.projectName;
+
+  // ensure that the repository project dependencies and the starting package dependencies match
+  repo.projects[myProjectName] = await generatePolymanDeps(repo, repo.projects[myProjectName], pack);
+
+  // get a list of all projects connected to my project
+  const connectedProjects = getConnectedProjects(myProjectName, repo, true, false, [myProjectName]);
+  const projectMap = {};
+  for (const connectedProject of connectedProjects) {
+    const deps = {};
+    const projectData = repo.projects[connectedProject];
+    deps.dependencies = Object.keys(fallback(projectData.local_dependencies, {}));
+    deps.dev_dependencies = Object.keys(fallback(projectData.local_dev_dependencies, {}));
+    deps.build_dependencies = Object.keys(fallback(projectData.build_dependencies, {}));
+    const buildDeps = [];
+    for (const buildDep of deps.build_dependencies) {
+      if (!deps.dependencies.includes(buildDep)) {
+        buildDeps.push(buildDep);
+      }
+    }
+    deps.build_dependencies = buildDeps;
+    projectMap[connectedProject] = deps;
+  }
+
+  const runOrder = getRunOrder(myProjectName, projectMap);
+
+  // add dependencies up the dependency tree and rebuild each connected project
+  for (const projectName of runOrder) {
+    console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+    const localPath = repo.projects[projectName].local_path;
+    console.log(chalk.cyan('cd ' + localPath));
+    console.log(chalk.cyan('poly relink'));
+    await relink({}, localPath);
+    console.log(chalk.cyan('poly build'));
+    config.force = true;
+    await build(config, localPath);
+  }
+}
+
+function getRunOrder(projectName, projectMap) {
+  let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, []);
+  if (runOrder[runOrder.length - 1] !== projectName) {
+    runOrder.push(projectName);
+  }
+
+  hitProject[projectName] = false;
+  for (const devDep of projectMap[projectName].dev_dependencies) {
+    const gro = generateRunOrder(devDep, projectMap, [devDep], hitProject);
+    hitProject = gro.hitProject;
+    const ro = gro.runOrder;
+    if (ro[ro.length - 1] !== devDep) {
+      ro.push(devDep);
+    }
+    for (const item of ro) {
+      if (!runOrder.includes(item)) {
+        runOrder = concatMoveToBack(runOrder, [item]);
       }
     }
   }
 
-  for (const projectName of projectNames) {
-    const project = repo.projects[projectName];
-    if (project.local_path) {
-      const {localDeps, localDevDeps} = getDeps(project);
-      const allDeps = _.merge({}, localDeps, localDevDeps);
-
-      const depsToRemove = Object.keys(allDeps);
-      if (depsToRemove.length > 0) {
-        await local(depsToRemove, 'remove', config, project.local_path);
-
-        const depsToAdd = Object.keys(localDeps);
-        if (depsToAdd.length > 0) {
-          config.dev = false;
-          await local(depsToAdd, 'add', config, project.local_path);
-        }
+  if (runOrder[runOrder.length - 1] !== projectName) {
+    runOrder.push(projectName);
+  }
   
-        const devDepsToAdd = Object.keys(localDevDeps);
-        if (devDepsToAdd.length > 0) {
-          config.dev = true;
-          await local(devDepsToAdd, 'add', config, project.local_path);
-        }
-      }
-    }
-  }
+  return runOrder;
 }
 
-function getDeps(project) {
-  const localDeps = JSON.parse(JSON.stringify(fallback(project.local_dependencies, {})));
-  const localDevDeps = JSON.parse(JSON.stringify(fallback(project.local_dev_dependencies, {})));
-  return {localDeps, localDevDeps};
-}
+function generateRunOrder(projectName, projectMap, runOrder = [], hitProject = {}) {
+  if (!hitProject[projectName]) {
+    hitProject[projectName] = true;
 
-function findMyDeps(seen, project, repo) {
-  const {localDeps, localDevDeps} = getDeps(project);
-  const projectNames = Object.assign({}, localDeps, localDevDeps);
-  for (const projectName in projectNames) {
-    if (!seen[projectName]) {
-      seen[projectName] = true;
-      const project = repo.projects[projectName];
-      seen = findMyDeps(seen, project, repo);
+    const deps = projectMap[projectName].dependencies.concat(projectMap[projectName].build_dependencies);
+    runOrder = concatMoveToFront(runOrder, deps);
+    for (const dep of deps) {
+      ({runOrder, hitProject} = generateRunOrder(dep, projectMap, runOrder, hitProject));
     }
   }
-  return seen;
+  return {runOrder, hitProject};
 }

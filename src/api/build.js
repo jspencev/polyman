@@ -1,35 +1,73 @@
-import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, cleanYarnLock } from '../util';
+import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, isRepoProject, writeJSONToFile, getLocalTarballPath } from '../util';
 import { findPackage } from '@carbon/node-util';
 const path = require('path');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 import pack from './private/pack';
+const _ = require('lodash');
 
 export default async function build(config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
-  const {packPath} = await findPackage(cwd);
+  const fp = await findPackage(cwd);
+  const myPack = fp.pack;
+  const originalPack = _.cloneDeep(myPack);
+  const packPath = fp.packPath;
   const packDir = path.parse(packPath).dir;
   let {project, projectName} = findProjectByLocalPath(repo, packDir);
-  if (!config.force) {
+  if (!config.force && false) { // for now, builds always run
     const hash = await doHash(project);
     if (project.hash === hash) {
       return false;
     }
   }
 
-  await yarn('build', project.local_path);
   const tarballDir = path.join(packDir, '.poly', 'build');
-  const tarballPath = await pack(project, tarballDir);
-  const hash = await doHash(project);
+  let buildFailed = false;
+  let tarballPath;
+  let hash;
+  try {
+    await yarn('build', project.local_path);
+    tarballPath = await pack(project, tarballDir);
+    repo.projects[projectName].tarball = tarballPath;
+
+    for (const dep in myPack.dependencies) {
+      if (isRepoProject(dep, repo)) {
+        delete myPack.dependencies[dep];
+      }
+    }
+    for (const devDep in myPack.devDependencies) {
+      if (isRepoProject(devDep, repo)) {
+        delete myPack.devDependencies[devDep];
+      }
+    }
+    await writeJSONToFile(packPath, myPack);
+    let localTarballDir = getLocalTarballPath(projectName, repo, repoPath);
+    localTarballDir = path.parse(localTarballDir).dir;
+    await pack(project, localTarballDir);
+    hash = await doHash(project);
+  } catch (e) {
+    buildFailed = true;
+    hash = 'failed';
+    tarballPath = project.tarball;
+    console.log(e);
+  }
+  
+  // revert package.json to original
+  await writeJSONToFile(packPath, originalPack);
+
   project.tarball = tarballPath;
   project.hash = hash;
   project = await generatePolymanDeps(repo, project);
   repo.projects[projectName] = project;
-  await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
-  await cleanYarnLock(cwd);
+  await writeJSONToFile(repoPath, repo);
+
+  if (buildFailed) {
+    throw Error('build failed');
+  }
+
   return true;
 }
 
 async function doHash(project) {
-  return await hashDirectory(project.local_path, ['node_modules', '.poly']);
+  return await hashDirectory(project.local_path, ['node_modules']);
 }
