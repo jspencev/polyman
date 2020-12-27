@@ -1,6 +1,6 @@
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { findRepository, getConnectedProjects, generatePolymanDeps, isRepoProject, getLocalTarballPath, descopify, writeJSONToFile, yarn } from '../../util';
+import { findRepository, getConnectedProjects, generatePolymanDeps, isRepoProject, getLocalTarballPath, descopify, writeJSONToFile, yarn, scopify } from '../../util';
 import { findPackage, getAppRootPath, isFile, writeFileIfNotExist } from '@carbon/node-util';
 import { isOneOf, sortObject } from '@carbon/util';
 const _ = require('lodash');
@@ -38,44 +38,52 @@ export default async function addRemove(dependencies, type, config, cwd) {
     }
     const toRemove = Object.keys(premodLocalDeps);
 
+    const dependenciesDir = path.join(appRootPath, '.poly', 'dependencies');
+    const devDependenciesDir = path.join(appRootPath, '.poly', 'devDependencies');
+
     if (config.local) {  
       // update production pack and repo with changes. tarballs are coppied later.
-      const dependenciesDir = path.join(appRootPath, '.poly', 'dependencies');
-      const devDependenciesDir = path.join(appRootPath, '.poly', 'devDependencies');
-      let depDir;
-      if (config.dev) {
-        depDir = devDependenciesDir;
-      } else {
-        depDir = dependenciesDir;
-      }
-  
-      if (type === 'add') {
-        for (const dep of dependencies) {
-          const project = repo.projects[dep];
-          let localTarballPath = path.join(depDir, path.parse(project.tarball).base);
-          localTarballPath = path.relative(appRootPath, localTarballPath);
-          const scopedName = `@${repo.name}/${dep}`;
-          if (config.dev) {
-            prodPack.devDependencies[scopedName] = 'file:' + localTarballPath;
+      for (const projectName of dependencies) {
+        if (isRepoProject(projectName, repo)) {
+          const scopedName = scopify(projectName, repo);
+          if (type === 'add') {
+            // tarball filenames are added in the next step
+            if (config.dev) {
+              prodPack.devDependencies[scopedName] = true;
+            } else {
+              prodPack.dependencies[scopedName] = true;
+            }
           } else {
-            prodPack.dependencies[scopedName] = 'file:' + localTarballPath;
+            delete prodPack.dependencies[scopedName];
+            delete prodPack.devDependencies[scopedName];
           }
-        }
-      } else {
-        for (const dep in prodPack.dependencies) {
-          if (isRepoProject(dep, repo) && dependencies.includes(descopify(dep))) {
-            delete prodPack.dependencies[dep];
-          }
-        }
-        for (const devDep in prodPack.devDependencies) {
-          if (isRepoProject(devDep, repo) && dependencies.includes(descopify(devDep))) {
-            delete prodPack.devDependencies[devDep];
-          }
+        } else {
+          throw Error(`"${projectName}" is not a project of this repository. Aborting...`);
         }
       }
-  
-      repo.projects[myProjectName] = await generatePolymanDeps(repo, repo.projects[myProjectName], prodPack);
     }
+
+    // ensure that the most up-to-date tarballs are being used.
+    for (const dep in prodPack.dependencies) {
+      if (isRepoProject(dep, repo)) {
+        const projectName = descopify(dep);
+        const project = repo.projects[projectName];
+        let localTarballPath = path.join(dependenciesDir, path.parse(project.tarball).base);
+        localTarballPath = path.relative(appRootPath, localTarballPath);
+        prodPack.dependencies[dep] = `file:./${localTarballPath}`;
+      }
+    }
+    for (const devDep in prodPack.devDependencies) {
+      if (isRepoProject(devDep, repo)) {
+        const projectName = descopify(devDep);
+        const project = repo.projects[projectName];
+        let localTarballPath = path.join(devDependenciesDir, path.parse(project.tarball).base);
+        localTarballPath = path.relative(appRootPath, localTarballPath);
+        prodPack.devDependencies[devDep] = `file:./${localTarballPath}`;
+      }
+    }
+
+    repo.projects[myProjectName] = await generatePolymanDeps(repo, repo.projects[myProjectName], prodPack);
   
     // hoist local dependency tree into package dependencies. This always happens because we do not want yarn to try to re-install "missing" packages.
     const postmodHoist = hoistLocalDependencies(prodPack, repo, repoPath);
@@ -134,8 +142,6 @@ export default async function addRemove(dependencies, type, config, cwd) {
     }
   
     // pull the new package.json, update all non-repo dependencies in the final package.json, and pull new production local dependency tarballs
-    const dependenciesDir = path.join(appRootPath, '.poly', 'dependencies');
-    const devDependenciesDir = path.join(appRootPath, '.poly', 'devDependencies');
     await rimraf(dependenciesDir);
     await rimraf(devDependenciesDir)
     const tmpPack = (await findPackage(cwd)).pack;
@@ -212,7 +218,7 @@ function hoistLocalDependencies(pack, repo, repoPath) {
 }
 
 async function checkTarballs(projectName, repo, repoPath) {
-  const err = `Project "${projectName}" must be build with polyman. Run "poly build" in the project directory.`;
+  const err = `Project "${projectName}" must be built with polyman. Run "poly build" in the project directory.`;
   projectName = descopify(projectName);
   if (!repo.projects[projectName].tarball) {
     throw Error(err);
