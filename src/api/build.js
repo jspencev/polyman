@@ -1,4 +1,4 @@
-import { yarn, hashDirectory, findRepository, findProjectByLocalPath, generatePolymanDeps, isRepoProject, writeJSONToFile, getLocalTarballPath } from '../util';
+import { yarn, hashDirectory, findRepository, generatePolymanDeps, isRepoProject, writeJSONToFile } from '../util';
 import { findPackage } from '@carbon/node-util';
 const path = require('path');
 const thenifyAll = require('thenify-all');
@@ -8,12 +8,16 @@ const _ = require('lodash');
 
 export default async function build(config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
+  const repoDir = path.parse(repoPath).dir;
   const fp = await findPackage(cwd);
   const myPack = fp.pack;
+  const myPackPath = fp.packPath;
+  const myPackDir = path.parse(myPackPath).dir;
   const originalPack = _.cloneDeep(myPack);
   const packPath = fp.packPath;
-  const packDir = path.parse(packPath).dir;
-  let {project, projectName} = findProjectByLocalPath(repo, packDir);
+  const projectName = myPack.name;
+  let project = repo.projects[projectName];
+  
   if (!config.force && false) { // for now, builds always run
     const hash = await doHash(project);
     if (project.hash === hash) {
@@ -21,14 +25,14 @@ export default async function build(config, cwd) {
     }
   }
 
-  const tarballDir = path.join(packDir, '.poly', 'build');
+  const tarballDir = path.join(project.local_path, '.poly', 'build');
   let buildFailed = false;
   let tarballPath;
   let hash;
   try {
-    await yarn('build', project.local_path);
-    tarballPath = await pack(project, tarballDir);
-    repo.projects[projectName].tarball = tarballPath;
+    await yarn('build', myPackDir);
+    tarballPath = await pack(myPackDir, tarballDir);
+    repo.projects[projectName] = tarballPath;
 
     for (const dep in myPack.dependencies) {
       if (isRepoProject(dep, repo)) {
@@ -41,9 +45,8 @@ export default async function build(config, cwd) {
       }
     }
     await writeJSONToFile(packPath, myPack);
-    let localTarballDir = getLocalTarballPath(projectName, repo, repoPath);
-    localTarballDir = path.parse(localTarballDir).dir;
-    await pack(project, localTarballDir);
+    let localTarballDir = path.resolve(repoDir, '.poly', 'build');
+    await pack(myPackDir, localTarballDir);
     hash = await doHash(project);
   } catch (e) {
     buildFailed = true;

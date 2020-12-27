@@ -30,10 +30,12 @@
     "core-js": "^3.6.5",
     "eol": "^0.9.1",
     "glob": "^7.1.6",
+    "ignore": "^5.1.8",
     "inquirer": "^7.3.3",
     "lodash": "^4.17.20",
     "md5": "^2.3.0",
     "rimraf": "^3.0.2",
+    "semver": "^7.3.4",
     "thenify": "^3.3.1",
     "thenify-all": "^1.6.0",
     "yargs": "^16.0.3",
@@ -45,14 +47,19 @@
     "@carbon/commonignore-js": "file:./.poly/devDependencies/commonignore-js-v1.0.4.tgz",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
-    "babel-plugin-minify-dead-code-elimination": "^0.5.1",
-    "babel-plugin-transform-inline-environment-variables": "^0.4.3",
     "commitizen": "^4.2.1",
     "cz-conventional-changelog": "^3.3.0",
     "git-cz": "^4.7.1",
     "husky": "^4.3.0",
     "source-map": "^0.7.3"
   },
+  "localDependencies": [
+    "node-util",
+    "util"
+  ],
+  "localDevDependencies": [
+    "commonignore-js"
+  ],
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
@@ -63,7 +70,5 @@
       "pre-commit": "commonignore -a",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
-  },
-  "peerDependencies": {},
-  "optionalDependencies": {}
+  }
 }

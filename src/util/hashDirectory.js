@@ -1,6 +1,6 @@
 const md5 = require('md5');
 const path = require('path');
-const thenify = require('thenify');
+import thenify from 'thenify';
 const glob = thenify(require('glob'));
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));

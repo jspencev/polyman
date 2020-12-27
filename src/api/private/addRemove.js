@@ -1,11 +1,11 @@
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-import { findRepository, getConnectedProjects, generatePolymanDeps, isRepoProject, getLocalTarballPath, descopify, writeJSONToFile, yarn, scopify } from '../../util';
+import { findRepository, getConnectedProjects, generatePolymanDeps, isRepoProject, descopify, writeJSONToFile, yarn, scopify } from '../../util';
 import { findPackage, getAppRootPath, isFile, writeFileIfNotExist } from '@carbon/node-util';
 import { isOneOf, sortObject } from '@carbon/util';
 const _ = require('lodash');
 const path = require('path');
-const thenify = require('thenify');
+import thenify from 'thenify';
 const rimraf = thenify(require('rimraf'));
 
 export default async function addRemove(dependencies, type, config, cwd) {
@@ -151,16 +151,31 @@ export default async function addRemove(dependencies, type, config, cwd) {
     if (!prodPack.devDependencies) {
       prodPack.devDependencies = {};
     }
-    for (const dep in tmpPack.dependencies) {
-      if (!isRepoProject(dep, repo)) {
-        prodPack.dependencies[dep] = tmpPack.dependencies[dep];
+
+    if (type === 'add') {
+      for (const dep in tmpPack.dependencies) {
+        if (!isRepoProject(dep, repo)) {
+          prodPack.dependencies[dep] = tmpPack.dependencies[dep];
+        }
+      }
+      for (const devDep in tmpPack.devDependencies) {
+        if (!isRepoProject(devDep, repo)) {
+          prodPack.devDependencies[devDep] = tmpPack.devDependencies[devDep];
+        }
+      }
+    } else {
+      for (const dep in prodPack.dependencies) {
+        if (!isRepoProject(dep, repo) && !tmpPack.dependencies[dep]) {
+          delete prodPack.dependencies[dep];
+        }
+      }
+      for (const devDep in prodPack.devDependencies) {
+        if (!isRepoProject(devDep, repo) && !tmpPack.devDependencies[devDep]) {
+          delete prodPack.devDependencies[devDep];
+        }
       }
     }
-    for (const devDep in tmpPack.devDependencies) {
-      if (!isRepoProject(devDep, repo)) {
-        prodPack.devDependencies[devDep] = tmpPack.devDependencies[devDep];
-      }
-    }
+
     prodPack.dependencies = sortObject(prodPack.dependencies);
     prodPack.devDependencies = sortObject(prodPack.devDependencies);
 
@@ -188,7 +203,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
     repo.projects[myProjectName] = await generatePolymanDeps(repo, repo.projects[myProjectName]);
     await writeJSONToFile(repoPath, repo);
   } catch (e) {
-    await rollback(originalPack, packPath);
+    await writeJSONToFile(packPath, originalPack);
     throw e;
   }
 }
@@ -228,7 +243,11 @@ async function checkTarballs(projectName, repo, repoPath) {
     throw Error(err);
   }
 
-  const localTarballExists = await isFile(getLocalTarballPath(projectName, repo, repoPath));
+  const prodTarball = repo.projects[projectName].tarball;
+  const filename = path.parse(prodTarball).base;
+  const repoDir = path.parse(repoPath).dir;
+  const localTarballPath = path.join(repoDir, '.poly', 'build', filename);
+  const localTarballExists = await isFile(localTarballPath);
   if (!localTarballExists) {
     throw Error(err);
   }
@@ -237,8 +256,4 @@ async function checkTarballs(projectName, repo, repoPath) {
 async function copyFile(oldLocation, newLocation) {
   await writeFileIfNotExist(newLocation, '');
   await fs.copyFile(oldLocation, newLocation);
-}
-
-async function rollback(pack, packPath) {
-  await writeJSONToFile(packPath, pack);
 }

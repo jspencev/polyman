@@ -3,6 +3,7 @@
 /node_modules
 /.env
 /tmp.js
+/tmp2.js
 /yarn-error.log
 
 #! .gitignore

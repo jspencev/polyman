@@ -1,4 +1,4 @@
-import { findRepository, findProjectByLocalPath, getConnectedProjects, generatePolymanDeps } from '../util';
+import { findRepository, getConnectedProjects, generatePolymanDeps } from '../util';
 import { findPackage } from '@carbon/node-util';
 import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
 const path = require('path');
@@ -21,9 +21,8 @@ export default async function bootstrap(config, cwd) {
     throw Error('Cannot bootstrap all yet. TODO');
   }
 
-  const projectDir = path.parse(packPath).dir;
-  const me = findProjectByLocalPath(repo, projectDir);
-  const myProjectName = me.projectName;
+  const myProject = repo.projects[pack.name];
+  const myProjectName = myProject.projectName;
 
   // ensure that the repository project dependencies and the starting package dependencies match
   repo.projects[myProjectName] = await generatePolymanDeps(repo, repo.projects[myProjectName], pack);
