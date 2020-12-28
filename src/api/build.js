@@ -84,6 +84,18 @@ export default async function build(config, cwd) {
     const lp = await findPackage(localPath);
     const localPack = lp.pack;
     const scope = `@${repo.name}`;
+    if (localPack.bin) {
+      for (const binCmd in localPack.bin) {
+        let binPath = localPack.bin[binCmd];
+        binPath = path.join('lib', scope, localDep, binPath);
+        if (!myTmpPack.bin) {
+          myTmpPack.bin = {};
+        }
+        if (!myTmpPack.bin[binCmd]) {
+          myTmpPack.bin[binCmd] = binPath;
+        }
+      }
+    }
     const libDir = path.resolve(tmpPackDir, 'lib', scope, localDep);
     localDirs[scopify(localDep, repo)] = path.resolve(libDir, localPack.main);
 
