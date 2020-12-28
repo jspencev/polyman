@@ -1,5 +1,4 @@
-/.poly/tmp
-/.poly/build
+/.poly
 /node_modules
 /.env
 /tmp.js
@@ -10,7 +9,7 @@
 /dist
 
 #! .npmignore
-/.poly/devDependencies
+/.vscode
 /src
 /.commonignore
 /.envrc
