@@ -1,12 +1,13 @@
-import { findRepository, getYarnCacheDir } from '../util'
+import { findRepository, YARN_CMD } from '../util'
 import { doAllExist } from '@carbon/util';
-const thenify = require('thenify');
+import { spawnChildProcess } from '@carbon/node-util';
+import thenify from 'thenify';
 const rimraf = thenify(require('rimraf'));
 const glob = thenify(require('glob'));
 const path = require('path');
 
 export default async function deleteFromYarnCache(name = null) {
-  const yarnCacheDir = await getYarnCacheDir();
+  const yarnCacheDir = (await spawnChildProcess(YARN_CMD, ['cache', 'dir'], {stdio: 'pipe'})).result;
   if (yarnCacheDir) {
     if (doAllExist(name)) {
       if (name.charAt(0) === '@') {

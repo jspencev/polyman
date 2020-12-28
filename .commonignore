@@ -1,15 +1,15 @@
-/.poly/tmp
-/.poly/build
+/.poly
 /node_modules
 /.env
 /tmp.js
+/tmp2.js
 /yarn-error.log
 
 #! .gitignore
 /dist
 
 #! .npmignore
-/.poly/devDependencies
+/.vscode
 /src
 /.commonignore
 /.envrc

@@ -2,20 +2,27 @@ import { moveFile } from '@carbon/node-util';
 const path = require('path');
 import { yarn } from '../../util';
 import generateTarballName from './generateTarballName';
+import chalk from 'chalk';
 
 /**
  * Packs the specified project into a tarball at the tarball path.
- * @param {*} project - Dependency project object.
+ * @param {*|String} project - Dependency project object or the project directory.
  * @param {String} tarballDir - Directory to place the new 
  * @returns {String} - Absolute path of the generated tarball.
  */
 export default async function pack(project, tarballDir) {
   // DO NOT TRY TO YARN PACK AT DIRECTORY. DRAGONS DOWN THAT PATH -JS
-  const projectDir = project.local_path;
+  let projectDir;
+  if (typeof project === 'string') {
+    projectDir = project;
+  } else {
+    projectDir = project.local_path;
+  }
   await yarn('pack', projectDir);
   const filename = await generateTarballName(projectDir);
   const generatedTarball = path.join(projectDir, filename);
   const finalTarball = path.join(tarballDir, filename);
   await moveFile(generatedTarball, finalTarball);
+  console.log(chalk.green(`moved tarball to "${finalTarball}"`));
   return finalTarball;
 }

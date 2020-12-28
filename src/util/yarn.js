@@ -1,7 +1,7 @@
 import { spawnChildProcess } from '@carbon/node-util';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import cleanYarnLock from './cleanYarnLock';
-const path = require('path');
+import YARN_CMD from './YARN_CMD';
 
 /**
  * Helper method for launching a yarn process.
@@ -18,8 +18,8 @@ export default async function yarn(command, cwd = process.cwd()) {
   if (command[0] === 'yarn') {
     command.shift();
   }
-  const yarnCmd = path.resolve(__dirname, '../../node_modules/.bin/yarn');
-  const {code, signal} = await spawnChildProcess(yarnCmd, command, {
+
+  const {code, signal} = await spawnChildProcess(YARN_CMD, command, {
     cwd: cwd
   });
 
