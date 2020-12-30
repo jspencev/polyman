@@ -251,40 +251,16 @@ async function getDepVersions(packOb, repo, appRootPath, depVersions = {__locals
   if (Array.isArray(packOb.localDependencies)) {
     localDeps = localDeps.concat(packOb.localDependencies);
   }
-  for (let localDep of localDeps) {
-    depVersions.__locals[localDep] = true;
-    localDep = scopify(localDep, repo);
-    const depDir = getDepDirectory(localDep, appRootPath);
-    const lp = await findPackage(depDir);
-    const depPack = lp.pack;
-    depVersions = await getDepVersions(depPack, repo, appRootPath, depVersions);
+  for (const localProjectName of localDeps) {
+    depVersions.__locals[localProjectName] = true;
+    const localProject = repo.projects[localProjectName];
+    const localProjectDir = localProject.local_path;
+    if (localProjectDir) {
+      const lp = await findPackage(localProjectDir);
+      const depPack = lp.pack;
+      depVersions = await getDepVersions(depPack, repo, appRootPath, depVersions);
+    }
   }
 
   return depVersions;
-}
-
-function getDepDirectory(dep, appRootPath) {
-  let scope;
-  let name;
-
-  let split = dep.split('@');
-  if (split.length === 1) {
-    dep = split[0];
-  } else {
-    dep = split[1];
-  }
-  split = dep.split('/');
-  if (split.length === 1) {
-    name = split[0];
-  } else {
-    scope = split[0];
-    name = split[1];
-  }
-
-  let dir = path.join(appRootPath, 'node_modules');
-  if (scope) {
-    dir = path.join(dir, `@${scope}`);
-  }
-  dir = path.join(dir, name);
-  return dir
 }
