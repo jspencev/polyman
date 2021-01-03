@@ -19,6 +19,9 @@ export default async function build(config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);
   const repoDir = path.parse(repoPath).dir;
 
+  // build the project where it is
+  await yarn('build', appRootPath);
+
   // get the package from the local repository
   const mp = await findPackage(cwd);
   const myPack = mp.pack;
