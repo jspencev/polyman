@@ -1,7 +1,6 @@
-import { yarn, hashDirectory, findRepository, writeJSONToFile, scopify } from '../util';
+import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory } from '../util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFile, isFile } from '@carbon/node-util';
 import { sortObject, isOneTruthy } from '@carbon/util';
-import install from './install';
 import pack from './private/pack';
 import _ from 'lodash';
 const path = require('path');
@@ -14,13 +13,12 @@ import thenifyAll from 'thenify-all';
 const fs = thenifyAll(require('fs'));
 import ignore from 'ignore';
 
+const LOCALS_DIR = '.poly_lib';
+
 export default async function build(config, cwd) {
   const appRootPath = await getAppRootPath(cwd);
   const {repo, repoPath} = await findRepository(cwd);
   const repoDir = path.parse(repoPath).dir;
-
-  // build the project where it is
-  await yarn('build', appRootPath);
 
   // get the package from the local repository
   const mp = await findPackage(cwd);
@@ -28,12 +26,15 @@ export default async function build(config, cwd) {
   const myProjectName = myPack.name;
   let myProject = repo.projects[myProjectName];
   
-  if (!config.force && false) { // for now, builds always run
-    const hash = await doHash(myProject);
+  if (!config.force) { // for now, builds always run
+    const hash = await hashDirectory(myProject.local_path);
     if (myProject.hash === hash) {
       return false;
     }
   }
+
+  // build the project where it is
+  await yarn('build', appRootPath);
 
   // set up the temporary build driectory
   const tmpPackDir = path.join(repoDir, '.poly', 'tmp', randomString(8));
@@ -41,15 +42,12 @@ export default async function build(config, cwd) {
   await writeFileIfNotExist(path.join(initDir), 'foo.txt');
   await rimraf(path.join(initDir));
 
-  // get the gitignore for the project and copy all unignored files to the tmp build directory
-  let gitignore = await fs.readFile(path.join(appRootPath, '.gitignore'));
-  gitignore = gitignore.toString();
-  gitignore = gitignore.split('\n');
-  gitignore = ignore().add(gitignore);
+  // get the npmignore (fallback to gitignore) for the project and copy all unignored files to the tmp build directory
+  const npmignore = await getNpmignore(appRootPath);
   await copyDirectory(appRootPath, tmpPackDir, async function(filepath) {
     filepath = path.relative(appRootPath, filepath);
     const shouldCopy = !isOneTruthy(
-      gitignore.ignores(filepath),
+      npmignore.ignores(filepath),
       filepath.includes('.git')
     );
     return shouldCopy;
@@ -90,7 +88,7 @@ export default async function build(config, cwd) {
     if (localPack.bin) {
       for (const binCmd in localPack.bin) {
         let binPath = localPack.bin[binCmd];
-        binPath = path.join('lib', scope, localDep, binPath);
+        binPath = path.join(LOCALS_DIR, scope, localDep, binPath);
         if (!myTmpPack.bin) {
           myTmpPack.bin = {};
         }
@@ -99,20 +97,10 @@ export default async function build(config, cwd) {
         }
       }
     }
-    const libDir = path.resolve(tmpPackDir, 'lib', scope, localDep);
+    const libDir = path.resolve(tmpPackDir, LOCALS_DIR, scope, localDep);
     localDirs[scopify(localDep, repo)] = path.resolve(libDir, localPack.main);
 
-    let npmignore;
-    try {
-      npmignore = await fs.readFile(path.resolve(localPath, '.npmignore'));
-    } catch (e) {
-      console.log(`.npmignore not found for local project "${localDep}". Falling back to .gitignore`);
-      npmignore = await fs.readFile(path.resolve(localPath, '.gitignore'));
-    }
-    npmignore = npmignore.toString();
-    npmignore = npmignore.split('\n');
-    npmignore = ignore().add(npmignore);
-
+    const npmignore = await getNpmignore(localPath);
     await copyDirectory(localPath, libDir, async function(filepath) {
       filepath = path.relative(localPath, filepath);
       return !npmignore.ignores(filepath);
@@ -120,7 +108,9 @@ export default async function build(config, cwd) {
   }
 
   // replace the local scoped imports to be relative paths based on their location in the build directory
-  const filesToReconfigure = await glob(path.join(tmpPackDir, '**', '*.*'));
+  const filesToReconfigure = await glob(path.join(tmpPackDir, '**', '*.*'), {
+    dot: true
+  });
   for (const filepath of filesToReconfigure) {
     if (babel.DEFAULT_EXTENSIONS.includes(path.parse(filepath).ext)) {
       let code = (await fs.readFile(filepath)).toString();
@@ -134,42 +124,18 @@ export default async function build(config, cwd) {
     }
   }
 
-  // add any build dependencies to the package.json
-  const scopedBuildDeps = [];
-  if (myProject.build_dependencies) {
-    for (const buildProjectName of myProject.build_dependencies) {
-      const buildProject = repo.projects[buildProjectName];
-      if (buildProject.local_path && !localDeps.includes(buildProjectName)) {
-        const tarball = buildProject.tarball;
-        const scopedName = scopify(buildProjectName, repo);
-        scopedBuildDeps.push(scopedName);
-        myTmpPack.devDependencies[scopedName] = `file:${tarball}`;
-      }
-    }
-  }
-
-  // write the final package folder and install
+  // write the final package
   await writeJSONToFile(myTmpPackPath, myTmpPack);
-  await install({}, tmpPackDir);
 
-
-  // attempt to build the project
+  // pack the project
   const tarballDir = path.join(myProject.local_path, '.poly', 'build');
   let buildFailed = false;
   let tarballPath;
   let hash;
   try {
-    await yarn('build', tmpPackDir);
-
-    // remove build dependencies from package
-    for (const buildDep of scopedBuildDeps) {
-      delete myTmpPack.devDependencies[buildDep];
-    }
-    await writeJSONToFile(myTmpPackPath, myTmpPack);
-
     tarballPath = await pack(tmpPackDir, tarballDir);
     repo.projects[myProjectName] = tarballPath;
-    hash = await doHash(myProject);
+    hash = await hashDirectory(myProject.local_path);
   } catch (e) {
     buildFailed = true;
     hash = 'failed';
@@ -194,10 +160,6 @@ export default async function build(config, cwd) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-async function doHash(project) {
-  return await hashDirectory(project.local_path, ['node_modules']);
-}
-
 async function copyDirectory(from, to, filter) {
   const globPattern = path.join(from, '**', '*');
   let filesToCopy;
@@ -216,7 +178,9 @@ async function copyDirectory(from, to, filter) {
       filesToCopy = await glob(globPattern, filter);
     }
   } else {
-    filesToCopy = await glob(globPattern);
+    filesToCopy = await glob(globPattern, {
+      dot: true
+    });
   }
 
   for (const filepath of filesToCopy) {
@@ -266,4 +230,17 @@ async function getDepVersions(packOb, repo, appRootPath, depVersions = {__locals
   }
 
   return depVersions;
+}
+
+async function getNpmignore(projectDir) {
+  let npmignore;
+  try {
+    npmignore = await fs.readFile(path.resolve(projectDir, '.npmignore'));
+  } catch (e) {
+    console.log(`.npmignore not found for local project in "${projectDir}". Falling back to .gitignore`);
+    npmignore = await fs.readFile(path.resolve(projectDir, '.gitignore'));
+  }
+  npmignore = npmignore.toString();
+  npmignore = ignore().add(npmignore);
+  return npmignore;
 }
