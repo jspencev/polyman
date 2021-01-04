@@ -1,4 +1,4 @@
-import { yarn, findRepository, writeJSONToFile, scopify } from '../util';
+import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory } from '../util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFile, isFile } from '@carbon/node-util';
 import { sortObject, isOneTruthy } from '@carbon/util';
 import pack from './private/pack';
@@ -12,7 +12,6 @@ const glob = thenify(require('glob'));
 import thenifyAll from 'thenify-all';
 const fs = thenifyAll(require('fs'));
 import ignore from 'ignore';
-import md5 from 'md5';
 
 const LOCALS_DIR = '.poly_lib';
 
@@ -28,7 +27,7 @@ export default async function build(config, cwd) {
   let myProject = repo.projects[myProjectName];
   
   if (!config.force) { // for now, builds always run
-    const hash = await doHash(myProject);
+    const hash = await hashDirectory(myProject.local_path);
     if (myProject.hash === hash) {
       return false;
     }
@@ -136,7 +135,7 @@ export default async function build(config, cwd) {
   try {
     tarballPath = await pack(tmpPackDir, tarballDir);
     repo.projects[myProjectName] = tarballPath;
-    hash = await doHash(myProject);
+    hash = await hashDirectory(myProject.local_path);
   } catch (e) {
     buildFailed = true;
     hash = 'failed';
@@ -160,18 +159,6 @@ export default async function build(config, cwd) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-async function doHash(project) {
-  let gitignore = await fs.readFile(path.resolve(project.local_path, '.gitignore'));
-  gitignore = makeIgnore(gitignore.toString());
-  return await hashDirectory(project.local_path, async function(filepath) {
-    filepath = path.relative(project.local_path, filepath);
-    return !isOneTruthy(
-      gitignore.ignores(filepath),
-      filepath.includes('.git')
-    );
-  });
-}
 
 async function copyDirectory(from, to, filter) {
   const globPattern = path.join(from, '**', '*');
@@ -253,37 +240,7 @@ async function getNpmignore(projectDir) {
     console.log(`.npmignore not found for local project in "${projectDir}". Falling back to .gitignore`);
     npmignore = await fs.readFile(path.resolve(projectDir, '.gitignore'));
   }
-  return makeIgnore(npmignore.toString());
-}
-
-function makeIgnore(ignoreString) {
-  ignoreString = ignoreString.split('\n');
-  ignoreString = ignore().add(ignoreString);
-  return ignoreString;
-}
-
-async function hashDirectory(dir, filter) {
-  if (!path.isAbsolute(dir)) {
-    throw Error(`Directory path must be absolute. Yours: ${dir}`);
-  }
-
-  let files = await glob(path.join(dir, '**', '*'), {
-    dot: true
-  });
-  const newFiles = [];
-  for (const file of files) {
-    if (await filter(file)) {
-      newFiles.push(file);
-    }
-  }
-  files = newFiles;
-
-  let hash = '';
-  for (const file of files) {
-    if (await isFile(file)) {
-      hash += md5(await fs.readFile(file) + '');
-    }
-  }
-  hash = md5(hash);
-  return hash;
+  npmignore = npmignore.toString();
+  npmignore = ignore().add(npmignore);
+  return npmignore;
 }

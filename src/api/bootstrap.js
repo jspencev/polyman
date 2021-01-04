@@ -23,7 +23,7 @@ export default async function bootstrap(config, cwd) {
   let myProject = repo.projects[myProjectName];
 
   // ensure that the repository project dependencies and the starting package dependencies match
-  myProject = await addDependenciesToProject(myProject, pack, true);
+  myProject = await addDependenciesToProject(myProject, pack, repo, true);
   repo.projects[myProjectName] = myProject;
 
   // get a list of all projects connected to my project
@@ -32,8 +32,16 @@ export default async function bootstrap(config, cwd) {
   for (const connectedProject of connectedProjects) {
     const deps = {};
     const projectData = repo.projects[connectedProject];
-    deps.dependencies = fallback(projectData.local_dependencies, []);
-    deps.dev_dependencies = fallback(projectData.local_dev_dependencies, []);
+    if (Array.isArray(projectData.local_dependencies)) {
+      deps.dependencies = fallback(projectData.local_dependencies, []);
+    } else {
+      deps.dependencies = fallback(Object.keys(projectData.local_dependencies), []);
+    }
+    if (Array.isArray(projectData.local_dev_dependencies)) {
+      deps.dev_dependencies = fallback(projectData.local_dev_dependencies, []);
+    } else {
+      deps.dev_dependencies = fallback(Object.keys(projectData.local_dev_dependencies), []);
+    }
     deps.build_dependencies = fallback(projectData.build_dependencies, []);
     const buildDeps = [];
     for (const buildDep of deps.build_dependencies) {
@@ -55,7 +63,6 @@ export default async function bootstrap(config, cwd) {
     console.log(chalk.cyan('poly relink'));
     await relink({}, localPath);
     console.log(chalk.cyan('poly build'));
-    config.force = true;
     await build(config, localPath);
   }
 }
@@ -75,10 +82,18 @@ function getConnectedProjects(projectName, repo, dev = false, passDev = false, c
   const project = repo.projects[projectName];
   let allDeps = [];
   if (project.local_dependencies) {
-    allDeps = allDeps.concat(project.local_dependencies);
+    if (Array.isArray(project.local_dependencies)) {
+      allDeps = allDeps.concat(project.local_dependencies);
+    } else {
+      allDeps = allDeps.concat(Object.keys(project.local_dependencies));
+    }
   }
   if (dev && project.local_dev_dependencies) {
-    allDeps = allDeps.concat(project.local_dev_dependencies);
+    if (Array.isArray(project.local_dev_dependencies)) {
+      allDeps = allDeps.concat(project.local_dev_dependencies);
+    } else {
+      allDeps = allDeps.concat(Object.keys(project.local_dev_dependencies));
+    }
   }
   for (const dep of allDeps) {
     if (!connectedProjects.includes(dep)) {

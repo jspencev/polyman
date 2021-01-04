@@ -1,4 +1,4 @@
-import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject } from '../../util';
+import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '../../util';
 import { findPackage, isFile } from '@carbon/node-util';
 import { isOneOf, sortObject } from '@carbon/util';
 import _ from 'lodash';
@@ -56,7 +56,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
   }
 
   // Collect the dependencies to remove and add. This includes a remove & add of every local dependency.
-  let depsToRemove = [].concat(allInitLocalDeps);
+  let depsToRemove = [];
   let depsToAdd = [];
   let devDepsToAdd = [];
   if (config.local) {
@@ -101,18 +101,41 @@ export default async function addRemove(dependencies, type, config, cwd) {
 
   // Collect the final local dependencies for re-addition with yarn.
   // If a tarball is missing the modification is aborted.
+  const localShouldRelink = {};
   for (const projectName of pack.localDependencies) {
+    const project = repo.projects[projectName];
     const tarballPath = await getTarballPath(projectName, repo);
     const scopedName = scopify(projectName, repo);
     const modVal = `${scopedName}@file:${tarballPath}`;
-    depsToAdd.push(modVal);
+    let should = false;
+    if (!Array.isArray(myProject.local_dependencies)) {
+      const hash = await hashDirectory(project.local_path);
+      should = (myProject.local_dependencies[projectName] !== hash);
+    } else {
+      should = true;
+    }
+    if (should) {
+      localShouldRelink[scopedName] = modVal;
+    }
   }
   for (const devProjectName of pack.localDevDependencies) {
+    const devProject = repo.projects[devProjectName];
     const tarballPath = await getTarballPath(devProjectName, repo);
     const scopedName = scopify(devProjectName, repo);
     const modVal = `${scopedName}@file:${tarballPath}`;
-    devDepsToAdd.push(modVal);
+    let should = false;
+    if (!Array.isArray(myProject.local_dev_dependencies)) {
+      const hash = await hashDirectory(devProject.local_path);
+      should = (myProject.local_dev_dependencies[devProjectName] !== hash);
+    } else {
+      should = true;
+    }
+    if (should) {
+      localShouldRelink[scopedName] = modVal;
+    }
   }
+  depsToRemove = depsToRemove.concat(Object.keys(localShouldRelink));
+  depsToAdd = depsToAdd.concat(Object.values(localShouldRelink));
 
   // Through this next section, we modify the real package.json. 
   // In case of an error, package.json is rolled back to it's initial state to prevent dependency loss.
@@ -172,7 +195,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
     await writeJSONToFile(packPath, pack);
 
     // Update the repository to reflect changes.
-    myProject = addDependenciesToProject(myProject, pack);
+    myProject = addDependenciesToProject(myProject, pack, repo);
     repo.projects[myProjectName] = myProject;
     await writeJSONToFile(repoPath, repo);
   } catch (e) {
