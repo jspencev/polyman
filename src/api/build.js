@@ -1,7 +1,6 @@
 import { yarn, hashDirectory, findRepository, writeJSONToFile, scopify } from '../util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFile, isFile } from '@carbon/node-util';
 import { sortObject, isOneTruthy } from '@carbon/util';
-import install from './install';
 import pack from './private/pack';
 import _ from 'lodash';
 const path = require('path');
@@ -109,7 +108,9 @@ export default async function build(config, cwd) {
   }
 
   // replace the local scoped imports to be relative paths based on their location in the build directory
-  const filesToReconfigure = await glob(path.join(tmpPackDir, '**', '*.*'));
+  const filesToReconfigure = await glob(path.join(tmpPackDir, '**', '*.*'), {
+    dot: true
+  });
   for (const filepath of filesToReconfigure) {
     if (babel.DEFAULT_EXTENSIONS.includes(path.parse(filepath).ext)) {
       let code = (await fs.readFile(filepath)).toString();
@@ -181,7 +182,9 @@ async function copyDirectory(from, to, filter) {
       filesToCopy = await glob(globPattern, filter);
     }
   } else {
-    filesToCopy = await glob(globPattern);
+    filesToCopy = await glob(globPattern, {
+      dot: true
+    });
   }
 
   for (const filepath of filesToCopy) {
