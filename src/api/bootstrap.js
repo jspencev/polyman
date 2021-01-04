@@ -10,16 +10,38 @@ export default async function bootstrap(config, cwd) {
   console.warn(chalk.yellow('PAIN AND SUFFERING AWAITS THOSE WHO EXIT THIS PROCESS.'));
 
   const {repo} = await findRepository(cwd);
+
   let pack;
   try {
     ({pack} = await findPackage(cwd));
   } catch (e) {
     console.log(`Looks like you're not in a package. Bootstrapping all...`);
     config.all = true;
-    throw Error('Cannot bootstrap all yet. TODO');
   }
 
+  const toBootstrap = [];
+  if (config.all) {
+    for (const projectName in repo.projects) {
+      const project = repo.projects[projectName];
+      if (project.local_path) {
+        toBootstrap.push(projectName);
+      }
+    }
+  } else {
+    toBootstrap.push(pack.name);
+  }
+
+  for (const projectName of toBootstrap) {
+    await runBootstrap(config, repo.projects[projectName].local_path);
+  }
+}
+
+async function runBootstrap(config, cwd) {
+  const {repo} = await findRepository(cwd);
+  const {pack} = await findPackage(cwd)
+
   const myProjectName = pack.name;
+  console.log(`Bootstrapping ${myProjectName}...`);
   let myProject = repo.projects[myProjectName];
 
   // ensure that the repository project dependencies and the starting package dependencies match
