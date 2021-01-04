@@ -3,7 +3,6 @@ import cleanYarnLock from './cleanYarnLock';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import descopify from './descopify';
 import findRepository from './findRepository';
-import hashDirectory from './hashDirectory';
 import isRepoProject from './isRepoProject';
 import scopify from './scopify';
 import writeJSONToFile from './writeJSONToFile';
@@ -16,7 +15,6 @@ export {
   deleteFromYarnCache,
   descopify,
   findRepository,
-  hashDirectory,
   isRepoProject,
   scopify,
   writeJSONToFile,
