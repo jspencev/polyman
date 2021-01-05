@@ -20,13 +20,17 @@
     "test": "echo \"no test file\"\n"
   },
   "dependencies": {
+    "@babel/cli": "^7.12.10",
     "@babel/core": "^7.12.1",
     "@babel/node": "^7.12.1",
+    "@babel/preset-env": "^7.12.11",
     "@babel/register": "^7.12.1",
     "@yarnpkg/lockfile": "^1.1.0",
+    "babel-plugin-minify-dead-code-elimination": "^0.5.1",
     "chalk": "^4.1.0",
     "core-js": "^3.6.5",
     "eol": "^0.9.1",
+    "gitignore-to-glob": "^0.3.0",
     "glob": "^7.1.6",
     "ignore": "^5.1.8",
     "inquirer": "^7.3.3",
@@ -40,8 +44,6 @@
     "yarn": "^1.22.10"
   },
   "devDependencies": {
-    "@babel/cli": "^7.11.6",
-    "@babel/preset-env": "^7.11.5",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
     "commitizen": "^4.2.1",
