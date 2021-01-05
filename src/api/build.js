@@ -158,12 +158,12 @@ export default async function build(config, cwd) {
     }
   }
   babelConfig.presets.push([
-    '@babel/preset-env',
+    await findModuleAbsolutePath('@babel/preset-env'),
     presetEnv
   ]);
 
   babelConfig.plugins.push([
-    'babel-plugin-minify-dead-code-elimination', {
+    await findModuleAbsolutePath('babel-plugin-minify-dead-code-elimination'), {
       keepFnName: true,
       keepClassName: true,
       keepFsArgs: true,
@@ -309,4 +309,23 @@ async function getNpmignore(projectDir) {
   npmignore = npmignore.toString();
   npmignore = ignore().add(npmignore);
   return npmignore;
+}
+
+async function findModuleAbsolutePath(mod) {
+  const dirs = path.split(path.sep);
+  while (dirs.length > 0) {
+    let modDir;
+    if (mod.charAt(0) === '@') {
+      modDir = mod.split('@')[1].split('/');
+    } else {
+      modDir = [mod];
+    }
+    const modPath = path.join(...dirs, 'node_modules', ...modDir);
+    const check = path.join(modPath, 'package.json');
+    if (await isFile(check)) {
+      return modPath;
+    }
+  }
+
+  throw Error('Module could not be found.');
 }
