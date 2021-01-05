@@ -312,19 +312,24 @@ async function getNpmignore(projectDir) {
 }
 
 async function findModuleAbsolutePath(mod) {
-  const dirs = path.split(path.sep);
+  const parsed = path.parse(__dirname);
+  const root = parsed.root
+  let dirs = parsed.dir.slice(root.length);
+  dirs = dirs.split(path.sep);
   while (dirs.length > 0) {
     let modDir;
     if (mod.charAt(0) === '@') {
-      modDir = mod.split('@')[1].split('/');
+      modDir = mod.split('/');
     } else {
       modDir = [mod];
     }
-    const modPath = path.join(...dirs, 'node_modules', ...modDir);
-    const check = path.join(modPath, 'package.json');
+    const modPath = root + path.join(...dirs, 'node_modules', ...modDir);
+    const check = root + path.join(modPath, 'package.json');
     if (await isFile(check)) {
       return modPath;
     }
+
+    dirs.pop();
   }
 
   throw Error('Module could not be found.');
