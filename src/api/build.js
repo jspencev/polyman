@@ -12,6 +12,8 @@ const glob = thenify(require('glob'));
 import thenifyAll from 'thenify-all';
 const fs = thenifyAll(require('fs'));
 import ignore from 'ignore';
+import babelDir from '@babel/cli/lib/babel/dir';
+import gitignoreToGlob from 'gitignore-to-glob';
 
 const LOCALS_DIR = '.poly_lib';
 
@@ -103,7 +105,11 @@ export default async function build(config, cwd) {
     const npmignore = await getNpmignore(localPath);
     await copyDirectory(localPath, libDir, async function(filepath) {
       filepath = path.relative(localPath, filepath);
-      return !npmignore.ignores(filepath);
+      const shouldCopy = !isOneTruthy(
+        npmignore.ignores(filepath),
+        filepath.includes('.git')
+      );
+      return shouldCopy;
     });
   }
 
@@ -124,8 +130,68 @@ export default async function build(config, cwd) {
     }
   }
 
+  // add corejs 3 to the project
+  // await add(['core-js'], {}, tmpPackDir);
+  if (!myTmpPack.dependencies['core-js']) {
+    myTmpPack.dependencies['core-js'] = '3';
+  }
+
+  // write a babel config to transform the code
+  const babelConfig = {
+    presets: [],
+    plugins: []
+  };
+
+  const nvmrcPath = path.join(appRootPath, '.nvmrc');
+  const presetEnv = {
+    useBuiltIns: 'usage',
+    corejs: 3
+  };
+  let nodeVersion;
+  if (await isFile(nvmrcPath)) {
+    const nvmrc = await fs.readFile(nvmrcPath);
+    nodeVersion = +nvmrc;
+  }
+  if (nodeVersion) {
+    presetEnv.targets = {
+      node: nodeVersion
+    }
+  }
+  babelConfig.presets.push([
+    '@babel/preset-env',
+    presetEnv
+  ]);
+
+  babelConfig.plugins.push([
+    'babel-plugin-minify-dead-code-elimination', {
+      keepFnName: true,
+      keepClassName: true,
+      keepFsArgs: true,
+      tdz: true
+    }
+  ]);
+
+  const npmignorePath = path.resolve(tmpPackDir, '.npmignore')
+  let babelIgnore = [];
+  if (await isFile(npmignorePath)) {
+    babelIgnore = gitignoreToGlob(npmignorePath);
+  }
+
+  const finalPackDir = path.join(repoDir, '.poly', 'tmp', randomString(8));
+
+  await babelDir({
+    babelOptions: babelConfig,
+    cliOptions: {
+      filenames: [tmpPackDir],
+      outDir: finalPackDir,
+      copyFiles: true,
+      copyIgnored: true,
+      ignore: babelIgnore
+    }
+  });
+
   // write the final package
-  await writeJSONToFile(myTmpPackPath, myTmpPack);
+  await writeJSONToFile(path.join(finalPackDir, 'package.json'), myTmpPack);
 
   // pack the project
   const tarballDir = path.join(myProject.local_path, '.poly', 'build');
@@ -133,7 +199,7 @@ export default async function build(config, cwd) {
   let tarballPath;
   let hash;
   try {
-    tarballPath = await pack(tmpPackDir, tarballDir);
+    tarballPath = await pack(finalPackDir, tarballDir);
     repo.projects[myProjectName] = tarballPath;
     hash = await hashDirectory(myProject.local_path);
   } catch (e) {
