@@ -1,6 +1,6 @@
 import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '../../util';
-import { findPackage, isFile } from '@carbon/node-util';
-import { isOneOf, sortObject } from '@carbon/util';
+import { findPackage, isFile } from '@jspencev/node-util';
+import { isOneOf, sortObject } from '@jspencev/util';
 import _ from 'lodash';
 import chalk from 'chalk';
 

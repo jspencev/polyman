@@ -1,4 +1,4 @@
-import { writeFileIfNotExist } from '@carbon/node-util';
+import { writeFileIfNotExist } from '@jspencev/node-util';
 
 /**
  * Writes an object to a file as JSON.

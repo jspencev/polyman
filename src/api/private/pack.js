@@ -1,4 +1,4 @@
-import { moveFile } from '@carbon/node-util';
+import { moveFile } from '@jspencev/node-util';
 const path = require('path');
 import { yarn } from '../../util';
 import generateTarballName from './generateTarballName';

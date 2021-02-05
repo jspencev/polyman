@@ -1,5 +1,5 @@
-import { isFile } from '@carbon/node-util';
-import { isOneTruthy } from '@carbon/util';
+import { isFile } from '@jspencev/node-util';
+import { isOneTruthy } from '@jspencev/util';
 import thenify from 'thenify';
 const glob = thenify(require('glob'));
 const path = require('path');

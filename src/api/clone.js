@@ -1,5 +1,5 @@
 import { findRepository } from '../util';
-import { spawnChildProcess, writeFileIfNotExist } from '@carbon/node-util';
+import { spawnChildProcess, writeFileIfNotExist } from '@jspencev/node-util';
 const path = require('path');
 
 export default async function clone(dependencies, config, cwd) {

@@ -1,4 +1,4 @@
-import { findPackage } from '@carbon/node-util';
+import { findPackage } from '@jspencev/node-util';
 
 export default async function generateTarballName(depLocalPath) {
   const depPack = (await findPackage(depLocalPath)).pack;

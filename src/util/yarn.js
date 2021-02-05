@@ -1,4 +1,4 @@
-import { spawnChildProcess } from '@carbon/node-util';
+import { spawnChildProcess } from '@jspencev/node-util';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import cleanYarnLock from './cleanYarnLock';
 import YARN_CMD from './YARN_CMD';
