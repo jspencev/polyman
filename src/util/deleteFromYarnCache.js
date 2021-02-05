@@ -1,6 +1,6 @@
 import { findRepository, YARN_CMD } from '../util'
-import { doAllExist } from '@carbon/util';
-import { spawnChildProcess } from '@carbon/node-util';
+import { doAllExist } from '@jspencev/util';
+import { spawnChildProcess } from '@jspencev/node-util';
 import thenify from 'thenify';
 const rimraf = thenify(require('rimraf'));
 const glob = thenify(require('glob'));

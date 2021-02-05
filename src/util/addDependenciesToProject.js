@@ -1,4 +1,4 @@
-import { sortObject } from '@carbon/util';
+import { sortObject } from '@jspencev/util';
 
 /**
  * Adds dependencies from the package.json to the submitted project object. Will organize the projects if specified.

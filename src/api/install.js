@@ -1,5 +1,5 @@
 import { yarn, deleteFromYarnCache, cleanYarnLock, findRepository } from '../util'
-import { findPackage } from '@carbon/node-util';
+import { findPackage } from '@jspencev/node-util';
 
 export default async function install(config, cwd = process.cwd()) {
   const {repo} = await findRepository(cwd);

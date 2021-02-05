@@ -1,6 +1,6 @@
 import { findRepository, addDependenciesToProject } from '../util';
-import { findPackage } from '@carbon/node-util';
-import { fallback, concatMoveToBack, concatMoveToFront } from '@carbon/util';
+import { findPackage } from '@jspencev/node-util';
+import { fallback, concatMoveToBack, concatMoveToFront } from '@jspencev/util';
 import build from './build';
 import relink from './relink';
 const chalk = require('chalk');

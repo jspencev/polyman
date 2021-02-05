@@ -1,4 +1,4 @@
-import { doAllExist, areAllTruthy } from '@carbon/util';
+import { doAllExist, areAllTruthy } from '@jspencev/util';
 
 export default function isRepoProject(projectName, repo) {
   if (projectName.charAt(0) === '@') {

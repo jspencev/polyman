@@ -3,7 +3,7 @@
   "version": "0.8.4",
   "description": "Run a monorepo as a polyrepo",
   "main": "/dist/index.js",
-  "author": "John Spence <jspence@carbonpay.app>",
+  "author": "John Spence <john.spence.v@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -52,6 +52,13 @@
     "husky": "^4.3.0",
     "source-map": "^0.7.3"
   },
+  "localDependencies": [
+    "node-util",
+    "util"
+  ],
+  "localDevDependencies": [
+    "commonignore-js"
+  ],
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
@@ -62,12 +69,5 @@
       "pre-commit": "commonignore -a",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
-  },
-  "localDependencies": [
-    "node-util",
-    "util"
-  ],
-  "localDevDependencies": [
-    "commonignore-js"
-  ]
+  }
 }

@@ -1,4 +1,4 @@
-import { getAppRootPath, writeFileIfNotExist } from '@carbon/node-util';
+import { getAppRootPath, writeFileIfNotExist } from '@jspencev/node-util';
 import findRepository from './findRepository';
 const lockfile = require('@yarnpkg/lockfile')
 const path = require('path');

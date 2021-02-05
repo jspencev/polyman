@@ -1,6 +1,6 @@
 import { findRepository } from '../util';
-import { findPackage } from '@carbon/node-util';
-import { isOneOf } from '@carbon/util';
+import { findPackage } from '@jspencev/node-util';
+import { isOneOf } from '@jspencev/util';
 import add from './add';
 import remove from './remove';
 

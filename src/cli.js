@@ -1,7 +1,7 @@
 import { init, add, local, remove, bootstrap, build, clone, install, relink } from './api';
 import { yarn } from './util';
-import { getAppRootPath, launchBabelDebug } from '@carbon/node-util';
-import { isOneOf, fallback, isOneTruthy } from '@carbon/util';
+import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
+import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
