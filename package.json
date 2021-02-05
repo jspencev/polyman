@@ -1,6 +1,6 @@
 {
   "name": "polyman",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Run a monorepo as a polyrepo",
   "main": "/dist/index.js",
   "author": "John Spence <john.spence.v@gmail.com>",
