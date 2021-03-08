@@ -1,5 +1,3 @@
-process.env.BUILD = true;
-
 import { writeJsConfig, writeDotenv, launchBabelBuild } from '@jspencev/build-util'
 const aliasConfig = require('%root/alias.config').default;
 const appRoot = require('%root/alias.config').appRoot;
