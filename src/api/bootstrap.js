@@ -1,4 +1,4 @@
-import { findRepository, addDependenciesToProject } from '../util';
+import { findRepository, addDependenciesToProject } from '%/util';
 import { findPackage } from '@jspencev/node-util';
 import { fallback, concatMoveToBack, concatMoveToFront } from '@jspencev/util';
 import build from './build';

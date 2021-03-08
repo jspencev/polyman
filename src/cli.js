@@ -1,5 +1,5 @@
-import { init, add, local, remove, bootstrap, build, clone, install, relink } from './api';
-import { yarn } from './util';
+import { init, add, local, remove, bootstrap, build, clone, install, relink } from '%/api';
+import { yarn } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 const inquirer = require('inquirer');
@@ -17,6 +17,10 @@ const OPTIONS = {
   babel: {
     type: 'boolean',
     description: 'Execute with node-babel'
+  },
+  build: {
+    type: 'boolean',
+    description: 'Add local project as a build dependency.'
   },
   dev: {
     alias: 'd',

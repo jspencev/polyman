@@ -1,3 +1,5 @@
+const aliasConfig = require('./alias.config').default;
+
 module.exports = function (api) {
   api.cache(true);
 
@@ -11,7 +13,11 @@ module.exports = function (api) {
     }]
   ];
 
-  const plugins = [];
+  const plugins = [
+    ['babel-plugin-module-resolver', {
+      alias: aliasConfig
+    }]
+  ];
 
   return {
     presets,

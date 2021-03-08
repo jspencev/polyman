@@ -5,22 +5,23 @@
 # These rules apply in all .ignore files:
 /.poly
 /node_modules
-/.env
-/tmp.js
-/tmp2.js
-/yarn-error.log
+.env
+tmp.js
+tmp2.js
+yarn-error.log
 
 # These rules apply just to .npmignore:
 /.vscode
+/build
 /src
 /.commonignore
 /.envrc
 /.gitignore
 /.nvmrc
-/addGlobal.js
-/babel.config.js
-/commitlint.config.js
-/config.poly
-/jsconfig.json
-/yarn-error.log
-/yarn.lock
+addGlobal.js
+alias.config.js
+babel.config.js
+commitlint.config.js
+config.poly
+jsconfig.json
+yarn.lock

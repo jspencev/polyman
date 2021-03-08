@@ -1,4 +1,4 @@
-import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '../../util';
+import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '%/util';
 import { findPackage, isFile } from '@jspencev/node-util';
 import { isOneOf, sortObject } from '@jspencev/util';
 import _ from 'lodash';
@@ -199,8 +199,13 @@ export default async function addRemove(dependencies, type, config, cwd) {
 
     // Update the repository to reflect changes.
     myProject = addDependenciesToProject(myProject, pack, repo);
+    if (!myProject.build_dependencies) {
+      myProject.build_dependencies = [];
+    }
     repo.projects[myProjectName] = myProject;
     await writeJSONToFile(repoPath, repo);
+
+    return {pack, repo};
   } catch (e) {
     await writeJSONToFile(packPath, originalPack);
     throw e;
