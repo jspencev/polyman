@@ -1,7 +1,15 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "%root/*": [
+        "./*"
+      ],
+      "%/*": [
+        "./dist/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules"

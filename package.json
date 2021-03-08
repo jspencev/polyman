@@ -15,9 +15,9 @@
     "polx": "bin/polx"
   },
   "scripts": {
-    "build": "babel src --out-dir dist",
+    "build": "babel-node ./build/_entry",
     "commit": "git-cz",
-    "test": "echo \"no test file\"\n"
+    "test": "echo none"
   },
   "dependencies": {
     "@babel/cli": "^7.13.0",
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
+    "babel-plugin-module-resolver": "^4.1.0",
     "commitizen": "^4.2.1",
     "cz-conventional-changelog": "^3.3.0",
     "git-cz": "^4.7.1",
@@ -57,6 +58,7 @@
     "util"
   ],
   "localDevDependencies": [
+    "build-util",
     "commonignore-js"
   ],
   "config": {
