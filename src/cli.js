@@ -18,6 +18,10 @@ const OPTIONS = {
     type: 'boolean',
     description: 'Execute with node-babel'
   },
+  build: {
+    type: 'boolean',
+    description: 'Add local project as a build dependency.'
+  },
   dev: {
     alias: 'd',
     type: 'boolean',

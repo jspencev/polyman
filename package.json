@@ -20,11 +20,11 @@
     "test": "echo \"no test file\"\n"
   },
   "dependencies": {
-    "@babel/cli": "^7.12.10",
-    "@babel/core": "^7.12.1",
-    "@babel/node": "^7.12.1",
-    "@babel/preset-env": "^7.12.11",
-    "@babel/register": "^7.12.1",
+    "@babel/cli": "^7.13.0",
+    "@babel/core": "^7.13.8",
+    "@babel/node": "^7.13.0",
+    "@babel/preset-env": "^7.13.9",
+    "@babel/register": "^7.13.8",
     "@yarnpkg/lockfile": "^1.1.0",
     "babel-plugin-minify-dead-code-elimination": "^0.5.1",
     "chalk": "^4.1.0",

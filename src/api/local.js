@@ -1,15 +1,16 @@
-import { findRepository } from '../util';
+import { findRepository, writeJSONToFile } from '../util';
 import { findPackage } from '@jspencev/node-util';
 import { isOneOf } from '@jspencev/util';
 import add from './add';
 import remove from './remove';
+import _ from 'lodash';
 
 export default async function local(projects, nextCmd, config, cwd) {
   if (!isOneOf(nextCmd, 'add', 'remove')) {
     throw Error('nextCmd must be one of "add" or "remove"');
   }
 
-  const {repo} = await findRepository(cwd);
+  let {repo, repoPath} = await findRepository(cwd);
   const myPackage = await findPackage(cwd);
   const myName = myPackage.pack.name;
   const toStrip = [];
@@ -41,9 +42,26 @@ export default async function local(projects, nextCmd, config, cwd) {
   }
 
   config.local = true;
+  if (config.build) {
+    config.dev = true;
+  }
+
   if (nextCmd === 'add') {
-    await add(projects, config, cwd);
+    ({repo} = await add(projects, config, cwd));
+    if (config.build) {
+      const buildDeps = repo.projects[myName].build_dependencies;
+      for (const projectName of projects) {
+        if (!buildDeps.includes(projectName)) {
+          buildDeps.push(projectName);
+        }
+      }
+      buildDeps.sort();
+      repo.projects[myName].build_dependencies = buildDeps;
+      await writeJSONToFile(repoPath, repo);
+    }
   } else {
-    await remove(projects, config, cwd);
+    ({repo} = await remove(projects, config, cwd));
+    _.pullAll(repo.projects[myName].build_dependencies, projects);
+    await writeJSONToFile(repoPath, repo);
   }
 }

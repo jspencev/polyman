@@ -59,11 +59,15 @@ Removes dependencies.
 ### poly local [add/remove] [dependency(ies)...]
 Adds/removes a project in this polyrepo as a dependency of the current project. If the project is locally available, it will be added as a file: dependency and yarn will symlink. If the project is not locally available, polyman will fallback to the git_repository url (TODO: this doesn't work yet). Dependency added scoped as @<my repository name>/<project>.
 
+**Options:**
+--dev add as dev dependency
+--build add as build dependency. Build dependencies tell polyman to execute relink/build during bootstrap BEFORE relink/build of the bootstrapping project so the bootstrapping project can build correctly. DO NOT ADD THE PROJECT AS A BUILD DEPENDENCY IF THE PROJECT IS ALREADY A REGULAR DEPENDENCY.
+
 ### poly build
 Calls the build command if the directory has new content and packs the project into a tarball at .poly/build/ for export and a different tarball at the repository level that is used by polyman for local linking.
 
 ### poly bootstrap
-Runs through every local polyman project and relinks all local project dependencies.
+Runs through every local polyman project and relinks/builds all local project dependencies.
 
 ### poly relink
 Relinks all local dependiencies without attempting to build each local project.
