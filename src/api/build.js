@@ -1,4 +1,4 @@
-import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory } from '../util';
+import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory } from '%/util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFile, isFile } from '@jspencev/node-util';
 import { sortObject, isOneTruthy } from '@jspencev/util';
 import pack from './private/pack';

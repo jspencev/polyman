@@ -1,5 +1,5 @@
-import { init, add, local, remove, bootstrap, build, clone, install, relink } from './api';
-import { yarn } from './util';
+import { init, add, local, remove, bootstrap, build, clone, install, relink } from '%/api';
+import { yarn } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 const inquirer = require('inquirer');

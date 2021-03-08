@@ -1,4 +1,4 @@
-import { findRepository, writeJSONToFile } from '../util';
+import { findRepository, writeJSONToFile } from '%/util';
 import { findPackage } from '@jspencev/node-util';
 import { isOneOf } from '@jspencev/util';
 import add from './add';

@@ -1,4 +1,4 @@
-import { findRepository, YARN_CMD } from '../util'
+import { findRepository, YARN_CMD } from '%/util'
 import { doAllExist } from '@jspencev/util';
 import { spawnChildProcess } from '@jspencev/node-util';
 import thenify from 'thenify';

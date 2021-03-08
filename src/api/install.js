@@ -1,4 +1,4 @@
-import { yarn, deleteFromYarnCache, cleanYarnLock, findRepository } from '../util'
+import { yarn, deleteFromYarnCache, cleanYarnLock, findRepository } from '%/util'
 import { findPackage } from '@jspencev/node-util';
 
 export default async function install(config, cwd = process.cwd()) {

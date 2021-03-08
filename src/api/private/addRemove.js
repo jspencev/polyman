@@ -1,4 +1,4 @@
-import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '../../util';
+import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '%/util';
 import { findPackage, isFile } from '@jspencev/node-util';
 import { isOneOf, sortObject } from '@jspencev/util';
 import _ from 'lodash';
