@@ -1,7 +1,7 @@
 import { getAppRootPath, writeFileIfNotExist } from '@jspencev/node-util';
 import findRepository from './findRepository';
 const lockfile = require('@yarnpkg/lockfile')
-const path = require('path');
+import path from 'path';
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
 const eol = require('eol');

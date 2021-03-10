@@ -5,7 +5,7 @@ import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 const inquirer = require('inquirer');
 const thenifyAll = require('thenify-all');
 const fs = thenifyAll(require('fs'));
-const path = require('path');
+import path from 'path';
 const _ = require('lodash');
 
 const OPTIONS = {

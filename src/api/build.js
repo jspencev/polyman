@@ -3,7 +3,7 @@ import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFil
 import { sortObject, isOneTruthy } from '@jspencev/util';
 import pack from './private/pack';
 import _ from 'lodash';
-const path = require('path');
+import path from 'path';
 import semver from 'semver';
 import * as babel from '@babel/core';
 import thenify from 'thenify';

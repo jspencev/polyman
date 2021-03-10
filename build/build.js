@@ -1,7 +1,7 @@
 import { writeJsConfig, writeDotenv, launchBabelBuild } from '@jspencev/build-util'
 const aliasConfig = require('%root/alias.config').default;
 const appRoot = require('%root/alias.config').appRoot;
-const path = require('path');
+import path from 'path';
 
 export default async function build(env) {
   if (env === 'development' || !env) {

@@ -5,7 +5,7 @@ import { findRepository } from '%/util';
 import { findPackage, spawnChildProcess } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
 import add from './add';
-const path = require('path');
+import path from 'path';
 
 export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) {
   if (prompt) {

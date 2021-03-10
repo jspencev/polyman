@@ -2,7 +2,7 @@ import { isFile } from '@jspencev/node-util';
 import { isOneTruthy } from '@jspencev/util';
 import thenify from 'thenify';
 const glob = thenify(require('glob'));
-const path = require('path');
+import path from 'path';
 import md5 from 'md5';
 import thenifyAll from 'thenify-all';
 const fs = thenifyAll(require('fs'));

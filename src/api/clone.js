@@ -1,6 +1,6 @@
 import { findRepository } from '%/util';
 import { spawnChildProcess, writeFileIfNotExist } from '@jspencev/node-util';
-const path = require('path');
+import path from 'path';
 
 export default async function clone(dependencies, config, cwd) {
   const {repo, repoPath} = await findRepository(cwd);

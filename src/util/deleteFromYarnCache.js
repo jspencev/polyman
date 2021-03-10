@@ -4,7 +4,7 @@ import { spawnChildProcess } from '@jspencev/node-util';
 import thenify from 'thenify';
 const rimraf = thenify(require('rimraf'));
 const glob = thenify(require('glob'));
-const path = require('path');
+import path from 'path';
 
 export default async function deleteFromYarnCache(name = null) {
   const yarnCacheDir = (await spawnChildProcess(YARN_CMD, ['cache', 'dir'], {stdio: 'pipe'})).result;
