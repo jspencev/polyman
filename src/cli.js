@@ -1,5 +1,5 @@
 import { init, add, local, remove, bootstrap, build, clone, install, relink } from '%/api';
-import { yarn } from '%/util';
+import { yarn, migrate } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 const inquirer = require('inquirer');
@@ -45,6 +45,10 @@ const OPTIONS = {
     type: 'boolean',
     alias: 'debug-brk',
     description: 'Pass inspect-brk to the node process'
+  },
+  noMigrate: {
+    type: 'boolean',
+    description: 'Do not run repository migrations'
   },
   optional: {
     type: 'boolean',
@@ -136,6 +140,15 @@ export default async function cli(exec = false) {
   const config = _.merge({}, defaultConfig, fileConfig, argvConfig);
 
   const command = argv._[0];
+
+
+  // attempt to migrate the polyrepo to the most up-to-date version
+  if (command !== 'node' && !config.noMigrate) {
+    try {
+      await migrate();
+    } catch (e) {}
+  }
+
   if (command === 'init') {
     let questions = [{
       type: 'confirm',

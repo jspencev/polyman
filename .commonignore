@@ -1,9 +1,9 @@
 /.poly
 /node_modules
-.env
-tmp.js
-tmp2.js
-yarn-error.log
+/.env
+/tmp.js
+/tmp2.js
+/yarn-error.log
 
 #! .gitignore
 /dist
@@ -16,10 +16,11 @@ yarn-error.log
 /.envrc
 /.gitignore
 /.nvmrc
-addGlobal.js
-alias.config.js
-babel.config.js
-commitlint.config.js
-config.poly
-jsconfig.json
-yarn.lock
+/addGlobal.js
+/alias.config.js
+/babel.config.js
+/commitlint.config.js
+/config.poly
+/jsconfig.json
+/migrate.js
+/yarn.lock
