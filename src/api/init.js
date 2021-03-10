@@ -2,17 +2,18 @@ import { yarn } from '%/util';
 import thenifyAll from 'thenify-all';
 import _fs from 'fs';
 const fs = thenifyAll(_fs);
-import { findRepository } from '%/util';
+import { findRepository, getMigrations, writeJSONToFile } from '%/util';
 import { findPackage, spawnChildProcess } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
 import add from './add';
 import path from 'path';
+import _ from 'lodash';
 
 export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) {
   if (prompt) {
-    await yarn('init');
+    await yarn('init', cwd);
   } else {
-    await yarn('init -y');
+    await yarn('init -y', cwd);
   }
 
   const {repo, repoPath} = await findRepository(cwd);
@@ -34,11 +35,23 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) 
     local_path: projectPath,
     git_repository: gitRepo,
     dependencies: {},
+    dev_dependencies: {},
     local_dependencies: {},
-    local_dev_dependencies: {}
+    local_dev_dependencies: {},
+    build_dependencies: []
   };
   repo.projects = sortObject(repo.projects);
-  await fs.writeFile(repoPath, JSON.stringify(repo, null, 2));
+  await writeJSONToFile(repoPath, repo);
+
+  const versions = await getMigrations();
+
+  const polyConfigFile = path.join(projectPath, 'config.poly');
+  const defaultPolyConfig = {
+    repository_name: repo.name,
+    version: _.last(versions),
+    babel: false
+  }
+  await writeJSONToFile(polyConfigFile, defaultPolyConfig);
   
   if (git) {
     await spawnChildProcess('git', ['init']);

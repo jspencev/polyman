@@ -8,7 +8,6 @@ import _fs from 'fs';
 const fs = thenifyAll(_fs);
 import path from 'path';
 import _ from 'lodash';
-import yargs from 'yargs';
 
 const OPTIONS = {
   all: {
@@ -75,7 +74,7 @@ const OPTIONS = {
 };
 
 export default async function cli(exec = false) {
-  yargs
+  let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
     .command('install', 'Install a project')
     .command('add <dependency...>', 'Add dependency(ies) to your project', function(yargs) {
