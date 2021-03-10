@@ -46,6 +46,10 @@ const OPTIONS = {
     alias: 'debug-brk',
     description: 'Pass inspect-brk to the node process'
   },
+  noMigrate: {
+    type: 'boolean',
+    description: 'Do not run repository migrations'
+  },
   optional: {
     type: 'boolean',
     description: 'Add as optional dependency'
@@ -106,9 +110,6 @@ export default async function cli(exec = false) {
     .help();
   const argv = yargs.argv;
 
-  // attempt to migrate the polyrepo to the most up-to-date version
-  await migrate();
-
   if (exec) {
     await yarn(['exec'].concat(argv._));
     return;
@@ -139,6 +140,15 @@ export default async function cli(exec = false) {
   const config = _.merge({}, defaultConfig, fileConfig, argvConfig);
 
   const command = argv._[0];
+
+
+  // attempt to migrate the polyrepo to the most up-to-date version
+  if (command !== 'node' && !config.noMigrate) {
+    try {
+      await migrate();
+    } catch (e) {}
+  }
+
   if (command === 'init') {
     let questions = [{
       type: 'confirm',
