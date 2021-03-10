@@ -7,7 +7,7 @@ import chalk from 'chalk';
 /**
  * Packs the specified project into a tarball at the tarball path.
  * @param {*|String} project - Dependency project object or the project directory.
- * @param {String} tarballDir - Directory to place the new 
+ * @param {String} tarballDir - Directory to place the generated tarball.
  * @returns {String} - Absolute path of the generated tarball.
  */
 export default async function pack(project, tarballDir) {

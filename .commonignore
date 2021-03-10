@@ -1,5 +1,8 @@
+/.nyc_output
 /.poly
 /node_modules
+/coverage
+/tmp
 /.env
 /tmp.js
 /tmp2.js
@@ -7,11 +10,13 @@
 
 #! .gitignore
 /dist
+/test/tmp
 
 #! .npmignore
 /.vscode
 /build
 /src
+/test
 /.commonignore
 /.envrc
 /.gitignore

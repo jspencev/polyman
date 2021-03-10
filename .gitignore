@@ -3,8 +3,11 @@
 # Refer to https://github.com/jspencev/commonignore for more info.
 
 # These rules apply in all .ignore files:
+/.nyc_output
 /.poly
 /node_modules
+/coverage
+/tmp
 /.env
 /tmp.js
 /tmp2.js
@@ -12,3 +15,4 @@
 
 # These rules apply just to .gitignore:
 /dist
+/test/tmp
