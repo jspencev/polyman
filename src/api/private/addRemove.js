@@ -62,7 +62,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
     const project = repo.projects[projectName];
     const {scopedName, modVal} = await generateLocalDepVal(projectName, repo);
     let should = false;
-    if (!Array.isArray(myProject.local_dependencies)) {
+    if (!Array.isArray(myProject.local_dependencies) && !config.force) {
       const hash = await hashDirectory(project.local_path);
       should = (myProject.local_dependencies[projectName] !== hash);
     } else {
@@ -76,7 +76,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
     const devProject = repo.projects[devProjectName];
     const {scopedName, modVal} = await generateLocalDepVal(devProjectName, repo);
     let should = false;
-    if (!Array.isArray(myProject.local_dev_dependencies)) {
+    if (!Array.isArray(myProject.local_dev_dependencies) && !config.force) {
       const hash = await hashDirectory(devProject.local_path);
       should = (myProject.local_dev_dependencies[devProjectName] !== hash);
     } else {
