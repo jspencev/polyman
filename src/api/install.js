@@ -1,10 +1,6 @@
-import { yarn, deleteFromYarnCache, cleanYarnLock, findRepository } from '%/util'
-import { findPackage } from '@jspencev/node-util';
+import { yarn, deleteFromYarnCache, cleanYarnLock } from '%/util'
 
 export default async function install(config, cwd = process.cwd()) {
-  const {repo} = await findRepository(cwd);
-  const {pack} = await findPackage(cwd);
-  const depName = `@${repo.name}/${pack.name}`;
   await deleteFromYarnCache();
   await cleanYarnLock(cwd);
 
