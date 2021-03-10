@@ -1,5 +1,5 @@
 import { init, add, local, remove, bootstrap, build, clone, install, relink } from '%/api';
-import { yarn } from '%/util';
+import { yarn, migrate } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 const inquirer = require('inquirer');
@@ -105,6 +105,9 @@ export default async function cli(exec = false) {
   yargs = yargs.demandCommand()
     .help();
   const argv = yargs.argv;
+
+  // attempt to migrate the polyrepo to the most up-to-date version
+  await migrate();
 
   if (exec) {
     await yarn(['exec'].concat(argv._));
