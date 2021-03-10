@@ -2,8 +2,10 @@ import { findRepository, YARN_CMD } from '%/util'
 import { doAllExist } from '@jspencev/util';
 import { spawnChildProcess } from '@jspencev/node-util';
 import thenify from 'thenify';
-const rimraf = thenify(require('rimraf'));
-const glob = thenify(require('glob'));
+import _rimraf from 'rimraf';
+const rimraf = thenify(_rimraf);
+import _glob from 'glob';
+const glob = thenify(_glob);
 import path from 'path';
 
 export default async function deleteFromYarnCache(name = null) {

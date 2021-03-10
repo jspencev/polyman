@@ -1,11 +1,13 @@
 import { isFile } from '@jspencev/node-util';
 import { isOneTruthy } from '@jspencev/util';
 import thenify from 'thenify';
-const glob = thenify(require('glob'));
+import _glob from 'glob';
+const glob = thenify(_glob);
 import path from 'path';
 import md5 from 'md5';
 import thenifyAll from 'thenify-all';
-const fs = thenifyAll(require('fs'));
+import _fs from 'fs';
+const fs = thenifyAll(_fs);
 import ignore from 'ignore';
 
 export default async function hashDirectory(dir) {

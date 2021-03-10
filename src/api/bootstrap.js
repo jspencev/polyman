@@ -3,7 +3,7 @@ import { findPackage } from '@jspencev/node-util';
 import { fallback, concatMoveToBack, concatMoveToFront, pushUnique } from '@jspencev/util';
 import build from './build';
 import relink from './relink';
-const chalk = require('chalk');
+import chalk from 'chalk';
 import _ from 'lodash';
 
 export default async function bootstrap(config, cwd) {

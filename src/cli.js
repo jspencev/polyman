@@ -2,11 +2,13 @@ import { init, add, local, remove, bootstrap, build, clone, install, relink, ini
 import { yarn, migrate } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
-const inquirer = require('inquirer');
-const thenifyAll = require('thenify-all');
-const fs = thenifyAll(require('fs'));
+import inquirer from 'inquirer'
+import thenifyAll from 'thenify-all';
+import _fs from 'fs';
+const fs = thenifyAll(_fs);
 import path from 'path';
-const _ = require('lodash');
+import _ from 'lodash';
+import yargs from 'yargs';
 
 const OPTIONS = {
   all: {
@@ -73,7 +75,7 @@ const OPTIONS = {
 };
 
 export default async function cli(exec = false) {
-  let yargs = require('yargs')
+  yargs
     .command('init', 'Init a project in this directory')
     .command('install', 'Install a project')
     .command('add <dependency...>', 'Add dependency(ies) to your project', function(yargs) {

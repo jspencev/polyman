@@ -1,5 +1,6 @@
-const thenifyAll = require('thenify-all');
-const fs = thenifyAll(require('fs'));
+import thenifyAll from 'thenify-all';
+import _fs from 'fs';
+const fs = thenifyAll(_fs);
 import { findFileUpPath } from '@jspencev/node-util';
 
 export default async function findRepository(cwd = process.cwd()) {

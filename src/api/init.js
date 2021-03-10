@@ -1,6 +1,7 @@
 import { yarn } from '%/util';
-const thenifyAll = require('thenify-all');
-const fs = thenifyAll(require('fs'));
+import thenifyAll from 'thenify-all';
+import _fs from 'fs';
+const fs = thenifyAll(_fs);
 import { findRepository } from '%/util';
 import { findPackage, spawnChildProcess } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
