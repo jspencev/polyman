@@ -1,4 +1,4 @@
-import { init, add, local, remove, bootstrap, build, clone, install, relink } from '%/api';
+import { init, add, local, remove, bootstrap, build, clone, install, relink, initRepo } from '%/api';
 import { yarn, migrate } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
@@ -61,6 +61,10 @@ const OPTIONS = {
   production: {
     type: 'boolean',
     description: 'Install for production'
+  },
+  repo: {
+    type: 'boolean',
+    description: 'Init a repo'
   },
   tilde: {
     type: 'boolean',
@@ -150,47 +154,59 @@ export default async function cli(exec = false) {
   }
 
   if (command === 'init') {
-    let questions = [{
-      type: 'confirm',
-      name: 'nvm',
-      message: 'Would you like to create .nvmrc?',
-      default: true
-    }];
-    const {nvm} = await inquirer.prompt(questions);
-    let nvmVersion;
-    if (nvm) {
-      questions = [{
+    if (config.repo) {
+      const cwd = process.cwd();
+      const guessName = _.last(cwd.split(path.sep));
+      const questions = [{
         type: 'input',
-        name: 'nvmVersion',
-        message: 'Which version of node would you like to use?',
-        default: 'latest'
+        name: 'name',
+        message: 'Name:',
+        default: guessName
       }];
-      ({nvmVersion} = await inquirer.prompt(questions));
-      if (nvmVersion === 'latest') {
-        nvmVersion = 'node';
-      }
-    }
-
-    questions = [{
-      type: 'confirm',
-      name: 'dotenv',
-      message: 'Would you like to create .env with NODE_ENV=development?',
-      default: true
-    }];
-    const {dotenv} = await inquirer.prompt(questions);
-
-    let envrc = false;
-    if (nvm || dotenv) {
-      questions = [{
+      const answers = await inquirer.prompt(questions);
+      await initRepo(answers.name, cwd);
+    } else {
+      let questions = [{
         type: 'confirm',
-        name: 'envrc',
-        message: 'Would you like to create .envrc?',
+        name: 'nvm',
+        message: 'Would you like to create .nvmrc?',
         default: true
       }];
-      ({envrc} = await inquirer.prompt(questions));
+      const {nvm} = await inquirer.prompt(questions);
+      let nvmVersion;
+      if (nvm) {
+        questions = [{
+          type: 'input',
+          name: 'nvmVersion',
+          message: 'Which version of node would you like to use?',
+          default: 'latest'
+        }];
+        ({nvmVersion} = await inquirer.prompt(questions));
+        if (nvmVersion === 'latest') {
+          nvmVersion = 'node';
+        }
+      }
+  
+      questions = [{
+        type: 'confirm',
+        name: 'dotenv',
+        message: 'Would you like to create .env with NODE_ENV=development?',
+        default: true
+      }];
+      const {dotenv} = await inquirer.prompt(questions);
+  
+      let envrc = false;
+      if (nvm || dotenv) {
+        questions = [{
+          type: 'confirm',
+          name: 'envrc',
+          message: 'Would you like to create .envrc?',
+          default: true
+        }];
+        ({envrc} = await inquirer.prompt(questions));
+      }
+      await init(true, true, nvmVersion, dotenv, envrc);
     }
-
-    await init(true, true, nvmVersion, dotenv, envrc);
   } else if (command === 'install') {
     await install(config);
   } else if (command === 'add') {

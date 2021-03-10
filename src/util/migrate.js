@@ -13,26 +13,17 @@ export default async function migrate(config = {}, cwd) {
 
   // find all migrations that are higher than the current version
   const migrationsDir = path.resolve(__dirname, '../migrations');
-  const files = await getMigrations();
-  const versionsToMigrate = [];
-  for (const file of files) {
-    const version = path.parse(file).name;
-    if (config.down) {
-      if (version <= currentVersion && version > config.down) {
-        versionsToMigrate.push(version);
-      }
-    } else {
-      if (version > currentVersion) {
-        versionsToMigrate.push(version);
-      }
-    }
-  }
+  const versions = await getMigrations();
+  const splitIndex = versions.indexOf(currentVersion);
+  let versionsToMigrate;
   let finalVersion;
-  versionsToMigrate.sort();
   if (config.down) {
+    const startIndex = versions.indexOf(config.down);
+    versionsToMigrate = versions.slice(startIndex, splitIndex + 1);
     versionsToMigrate.reverse();
     finalVersion = config.down;
   } else {
+    versionsToMigrate = versions.slice(splitIndex + 1);
     finalVersion = _.last(versionsToMigrate);
   }
 

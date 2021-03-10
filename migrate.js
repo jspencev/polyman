@@ -16,15 +16,9 @@ import path from 'path';
   } else {
     const {repo} = await findRepository();
     const currentVersion = repo.version;
-    const files = await getMigrations();
-    const versionsToMigrate = [];
-    for (const file of files) {
-      const version = path.parse(file).name;
-      if (version < currentVersion) {
-        versionsToMigrate.push(version);
-      }
-    }
-    versionsToMigrate.sort();
+    const versions = await getMigrations();
+    const splitIndex = versions.indexOf(currentVersion);
+    const versionsToMigrate = versions.slice(0, splitIndex);
     versionsToMigrate.reverse();
     
     questions = [{

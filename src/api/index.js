@@ -3,6 +3,7 @@ import bootstrap from './bootstrap';
 import build from './build';
 import clone from './clone';
 import init from './init';
+import initRepo from './initRepo';
 import install from './install';
 import local from './local';
 import relink from './relink';
@@ -14,6 +15,7 @@ export default {
   build,
   clone,
   init,
+  initRepo,
   install,
   local,
   relink,
@@ -26,6 +28,7 @@ export {
   build,
   clone,
   init,
+  initRepo,
   install,
   local,
   relink,
