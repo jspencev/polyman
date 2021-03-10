@@ -8,7 +8,7 @@ import local from './local';
 import relink from './relink';
 import remove from './remove';
 
-const commands = {
+export default {
   add,
   bootstrap,
   build,
@@ -31,5 +31,3 @@ export {
   relink,
   remove
 };
-
-export default commands;

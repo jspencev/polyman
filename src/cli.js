@@ -64,7 +64,7 @@ const OPTIONS = {
   }
 };
 
-async function cli(exec = false) {
+export default async function cli(exec = false) {
   let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
     .command('install', 'Install a project')
@@ -229,5 +229,3 @@ async function cli(exec = false) {
 
   console.log('== DONE ==');
 }
-
-module.exports = cli;
