@@ -3,6 +3,7 @@ import cleanYarnLock from './cleanYarnLock';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import descopify from './descopify';
 import findRepository from './findRepository';
+import getMigrations from './getMigrations';
 import hashDirectory from './hashDirectory';
 import isRepoProject from './isRepoProject';
 import migrate from './migrate';
@@ -17,6 +18,7 @@ export {
   deleteFromYarnCache,
   descopify,
   findRepository,
+  getMigrations,
   hashDirectory,
   isRepoProject,
   migrate,

@@ -1,8 +1,5 @@
-import { findRepository, writeJSONToFile } from '%/util';
-import thenify from 'thenify';
+import { findRepository, writeJSONToFile, getMigrations } from '%/util';
 import thenifyAll from 'thenify-all';
-import _glob from 'glob';
-const glob = thenify(_glob);
 import path from 'path';
 import _ from 'lodash';
 import chalk from 'chalk';
@@ -16,7 +13,7 @@ export default async function migrate(config = {}, cwd) {
 
   // find all migrations that are higher than the current version
   const migrationsDir = path.resolve(__dirname, '../migrations');
-  const files = await glob(path.join(migrationsDir, '*'));
+  const files = await getMigrations();
   const versionsToMigrate = [];
   for (const file of files) {
     const version = path.parse(file).name;

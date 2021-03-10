@@ -22,4 +22,5 @@ babel.config.js
 commitlint.config.js
 config.poly
 jsconfig.json
+migrate.js
 yarn.lock
