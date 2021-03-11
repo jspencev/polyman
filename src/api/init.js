@@ -2,7 +2,7 @@ import { yarn } from '%/util';
 import thenifyAll from 'thenify-all';
 import _fs from 'fs';
 const fs = thenifyAll(_fs);
-import { findRepository, getMigrations, writeJSONToFile } from '%/util';
+import { findRepository, getMigrations, writeJSONToFile, readJSONFile } from '%/util';
 import { findPackage, spawnChildProcess } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
 import add from './add';
@@ -60,12 +60,12 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) 
 
     let gitignore = '/node_modules\n/yarn-error.log\n';
     if (dotenv) {
-      gitignore += '/.env\n'
+      gitignore += '/.env\n';
     }
     await fs.writeFile('./.gitignore', gitignore);
 
     await add(['@commitlint/cli', '@commitlint/config-conventional', 'cz-conventional-changelog', 'git-cz', 'husky', 'commitizen'], {dev: true});
-    const pack = JSON.parse(await fs.readFile('./package.json'));
+    const pack = await readJSONFile('./package.json');
     pack.scripts = {
       commit: 'git-cz'
     };

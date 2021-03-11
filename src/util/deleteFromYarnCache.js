@@ -8,7 +8,7 @@ import _glob from 'glob';
 const glob = thenify(_glob);
 import path from 'path';
 
-export default async function deleteFromYarnCache(name = null) {
+export default async function deleteFromYarnCache(name, cwd) {
   const yarnCacheDir = (await spawnChildProcess(YARN_CMD, ['cache', 'dir'], {stdio: 'pipe'})).result;
   if (yarnCacheDir) {
     if (doAllExist(name)) {
@@ -16,19 +16,22 @@ export default async function deleteFromYarnCache(name = null) {
         name = name.split('/').join('-');
       }
     } else {
-      const {repo} = await findRepository();
-      name = '@' + repo.name;
+      try {
+        const {repo} = await findRepository(cwd);
+        name = '@' + repo.name;
+      } catch (e) {}
     }
-    const pattern = path.join(yarnCacheDir, `npm-${name}*`);
-    const files = await glob(pattern);
-    for (const file of files) {
-      await rimraf(file);
+
+    if (name) {
+      const pattern = path.join(yarnCacheDir, `npm-${name}*`);
+      const files = await glob(pattern);
+      for (const file of files) {
+        await rimraf(file);
+      }
     }
 
     try {
       await rimraf(path.join(yarnCacheDir, '.tmp'));
-    } catch (e) {
-      // do nothing
-    }
+    } catch (e) {}
   }
 }

@@ -1,10 +1,7 @@
-import { findRepository, writeJSONToFile, getMigrations } from '%/util';
-import thenifyAll from 'thenify-all';
+import { findRepository, writeJSONToFile, getMigrations, readJSONFile } from '%/util';
 import path from 'path';
 import _ from 'lodash';
 import chalk from 'chalk';
-import _fs from 'fs';
-const fs = thenifyAll(_fs);
 
 export default async function migrate(config = {}, cwd) {
   // grab the current version from the repository
@@ -19,7 +16,7 @@ export default async function migrate(config = {}, cwd) {
   let finalVersion;
   if (config.down) {
     const startIndex = versions.indexOf(config.down);
-    versionsToMigrate = versions.slice(startIndex, splitIndex + 1);
+    versionsToMigrate = versions.slice(startIndex + 1, splitIndex + 1);
     versionsToMigrate.reverse();
     finalVersion = config.down;
   } else {
@@ -50,7 +47,7 @@ export default async function migrate(config = {}, cwd) {
       if (project.local_path) {
         const polyConfigFile = path.join(project.local_path, 'config.poly');
         try {
-          const polyConfig = JSON.parse((await fs.readFile(polyConfigFile)).toString());
+          const polyConfig = await readJSONFile(polyConfigFile);
           polyConfig.version = repo.version;
           await writeJSONToFile(polyConfigFile, polyConfig);
         } catch(e) {}

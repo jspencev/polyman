@@ -1,11 +1,8 @@
 import { init, add, local, remove, bootstrap, build, clone, install, relink, initRepo } from '%/api';
-import { yarn, migrate } from '%/util';
+import { yarn, migrate, readJSONFile } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
 import inquirer from 'inquirer'
-import thenifyAll from 'thenify-all';
-import _fs from 'fs';
-const fs = thenifyAll(_fs);
 import path from 'path';
 import _ from 'lodash';
 
@@ -129,7 +126,7 @@ export default async function cli(exec = false) {
   }
   try {
     const configPath = path.join(appRootPath, 'config.poly');
-    fileConfig = JSON.parse(await fs.readFile(configPath));
+    fileConfig = await readJSONFile(configPath);
   } catch(e) {
     // not found
     fileConfig = {};

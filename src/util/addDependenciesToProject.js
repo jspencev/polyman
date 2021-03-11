@@ -1,4 +1,4 @@
-import { sortObject } from '@jspencev/util';
+import { sortObject, fallback } from '@jspencev/util';
 
 /**
  * Adds dependencies from the package.json to the submitted project object. Will organize the projects if specified.
@@ -30,6 +30,7 @@ export default function addDependenciesToProject(project, pack, repo, organize =
   project.dev_dependencies = devDependencies;
   project.local_dependencies = localDeps;
   project.local_dev_dependencies = localDevDeps;
+  project.build_dependencies = fallback(project.build_dependencies, []);
 
   return project;
 }

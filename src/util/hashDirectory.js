@@ -37,7 +37,7 @@ export default async function hashDirectory(dir) {
   let hash = '';
   for (const file of files) {
     if (await isFile(file)) {
-      hash += md5(await fs.readFile(file) + '');
+      hash += md5(await fs.readFile(file));
     }
   }
   hash = md5(hash);

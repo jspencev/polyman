@@ -1,9 +1,6 @@
-import { findRepository, writeJSONToFile } from '%/util';
+import { findRepository, writeJSONToFile, readJSONFile } from '%/util';
 import { sortObject } from '@jspencev/util';
-import thenifyAll from 'thenify-all';
 import path from 'path';
-import _fs from 'fs';
-const fs = thenifyAll(_fs);
 
 export async function up(cwd) {
   const {repo} = await findRepository(cwd);
@@ -13,7 +10,7 @@ export async function up(cwd) {
       const polyConfigFile = path.join(project.local_path, 'config.poly');
       let polyConfig;
       try {
-        polyConfig = JSON.parse((await fs.readFile(polyConfigFile)).toString());
+        polyConfig = await readJSONFile(polyConfigFile);
       } catch (e) {
         polyConfig = {
           babel: false
@@ -33,7 +30,7 @@ export async function down(cwd) {
     const project = repo.projects[projectName];
     if (project.local_path) {
       const polyConfigFile = path.join(project.local_path, 'config.poly');
-      const polyConfig = JSON.parse((await fs.readFile(polyConfigFile)).toString());
+      const polyConfig = await readJSONFile(polyConfigFile);
       delete polyConfig.version;
       delete polyConfig.repository_name;
       await writeJSONToFile(polyConfigFile, polyConfig);
