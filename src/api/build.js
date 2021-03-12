@@ -17,6 +17,7 @@ const fs = thenifyAll(_fs);
 import ignore from 'ignore';
 import babelDir from '@babel/cli/lib/babel/dir';
 import gitignoreToGlob from 'gitignore-to-glob';
+import md5 from 'md5';
 
 const LOCALS_DIR = '.poly_lib';
 
@@ -201,21 +202,25 @@ export default async function build(config = {}, cwd) {
 
   let buildFailed = false;
   let tarballPath;
-  let hash;
+  let dirHash;
+  let tarballHash;
   try {
     const builtTarballDir = await getBuiltTarballDir(appRootPath);
     tarballPath = await pack(finalPackDir, builtTarballDir);
     repo.projects[myProjectName] = tarballPath;
-    hash = await hashDirectory(myProject.local_path);
+    dirHash = await hashDirectory(myProject.local_path);
+    tarballHash = md5(await fs.readFile(tarballPath));
   } catch (e) {
     buildFailed = true;
-    hash = 'failed';
+    dirHash = 'failed';
+    tarballHash = 'failed';
     tarballPath = myProject.tarball;
     console.log(e);
   }
 
   myProject.tarball = tarballPath;
-  myProject.dir_hash = hash;
+  myProject.dir_hash = dirHash;
+  myProject.tarball_hash = tarballHash;
   repo.projects[myProjectName] = myProject;
   await writeJSONToFile(repoPath, repo);
 

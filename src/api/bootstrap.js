@@ -6,7 +6,7 @@ import relink from './relink';
 import chalk from 'chalk';
 import _ from 'lodash';
 
-export default async function bootstrap(config, cwd) {
+export default async function bootstrap(config = {}, cwd) {
   console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
   console.warn(chalk.yellow('PAIN AND SUFFERING AWAITS THOSE WHO EXIT THIS PROCESS.'));
 
@@ -84,7 +84,7 @@ async function runBootstrap(config, cwd) {
     const localPath = repo.projects[projectName].local_path;
     console.log(chalk.cyan('cd ' + localPath));
     console.log(chalk.cyan('poly relink'));
-    await relink({}, localPath);
+    await relink(config, localPath);
     console.log(chalk.cyan('poly build'));
     await build(config, localPath);
   }
