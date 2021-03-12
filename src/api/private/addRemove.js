@@ -1,17 +1,20 @@
-import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo } from '%/util';
-import { findPackage, isFile } from '@jspencev/node-util';
-import { isOneOf, sortObject, fallback } from '@jspencev/util';
+import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory } from '%/util';
+import { findPackage, isFile, randomString, moveFile } from '@jspencev/node-util';
+import { isOneOf, sortObject, fallback, pushUnique } from '@jspencev/util';
 import _ from 'lodash';
 import chalk from 'chalk';
 import path from 'path';
 import md5 from 'md5';
 import thenifyAll from 'thenify-all';
+import thenify from 'thenify';
 import _fs from 'fs';
 const fs = thenifyAll(_fs);
 import _glob from 'glob';
-const glob = thenifyAll(_glob);
+const glob = thenify(_glob);
+import _rimraf from 'rimraf';
+const rimraf = thenify(_rimraf);
 
-export default async function addRemove(dependencies, type, config, cwd) {
+export default async function addRemove(dependencies, type, config = {}, cwd) {
   if (!isOneOf(type, 'add', 'remove')) {
     throw Error('Incorrect type. Must be one of "add" or "remove".');
   }
@@ -35,7 +38,7 @@ export default async function addRemove(dependencies, type, config, cwd) {
 
     // verify that this project is a part of the repository
     if (!myProject) {
-      throw Error(`We could not find project "${myProjectName}" in the repository file`);
+      throw Error(`Project "${myProjectName}" is not part of this repository.`);
     }
   }
 
@@ -49,87 +52,27 @@ export default async function addRemove(dependencies, type, config, cwd) {
   // This ensures we start with what yarn last saw. Yarn sometimes tries to undo our "mistakes" so we need to make sure yarn is happy before proceeding with modification.
   const initHoistedPack = _.cloneDeep(myPack);
 
-  // get the list of initial local dependencies
-  let initLocalDeps;
-  if (config.production) {
-    // only grab the local dependencies
-    initLocalDeps = myPack.localDependencies;
-  } else {
-    // grab both local dependencies and local dev dependencies
-    initLocalDeps = myPack.localDependencies.concat(myPack.localDevDependencies);
-  }
-
-  // get the tarball paths for each local dependency and figure out which need to be relinked
-  // if a project's tarball does not exist the whole command is aborted
-  const localsToRelink = {};
-  for (const projectName of initLocalDeps) {
-    let tarballPath;
-    let shouldRelink = true;
-    if (sameRepo) {
-      const project = repo.projects[projectName];
-      tarballPath = await getTarballPath(project);
-
-      if (!config.force && project.local_path) {
-        const hash = md5(await fs.readFile(tarballPath));
-        const localDep = fallback(myProject.local_dependencies[projectName], myProject.local_dev_dependencies[projectName]);
-        if (localDep === hash) {
-          shouldRelink = false;
-        }
-      }
-    } else {
-      const tarballDir = path.join(myProjectDir, '.poly/dependencies');
-      const globPattern = path.join(tarballDir, `${projectName}*`);
-      const results = await glob(globPattern);
-      if (results.length === 0) {
-        throw Error(`Tarball for "${projectName}" couldn't be found in ${tarballDir}`);
-      }
-      tarballPath = results[0];
-
-      if (!config.install) {
-        shouldRelink = false;
-      }
-    }
-    
-    // add the project's dependency value to the hoisted package.json
-    const scopedName = scopify(projectName, repoName);
-    const localDepVal = makeLocalDepVal(tarballPath);
-    initHoistedPack.dependencies[scopedName] = localDepVal;
-
-    if (shouldRelink) {
-      const localDepAddCmd = makeLocalDepAddCmd(scopedName, localDepVal);
-      localsToRelink[scopedName] = localDepAddCmd;
-    }
-  }
-
-  // Generate a list of dependencies to remove and add
-  const depsToRemove = Object.keys(localsToRelink);
-  const depsToAdd = Object.values(localsToRelink);
+  // generate a list of dependencies to add/remove
+  const depsToRemove = [];
+  const depsToAdd = [];
   const devDepsToAdd = [];
   for (const dep of dependencies) {
     if (config.local) {
       if (sameRepo) {
         const project = repo.projects[dep];
         if (project) {
-          const scopedName = scopify(dep, repoName);
-          const tarballPath = await getTarballPath(project);
-          const localDepVal = makeLocalDepVal(tarballPath);
-          const localDepAddCmd = makeLocalDepAddCmd(scopedName, localDepVal);
           if (type === 'add') {
-            depsToAdd.push(localDepAddCmd);
+            // Add to the package. The add command will be added later.
             if (config.dev) {
-              if (!myPack.localDevDependencies.includes(dep)) {
-                myPack.localDevDependencies.push(dep);
-              }
+              pushUnique(myPack.localDevDependencies, dep);
             } else {
-              if (!myPack.localDependencies.includes(dep)) {
-                myPack.localDependencies.push(dep);
-              }
+              pushUnique(myPack.localDependencies, dep);
             }
           } else {
-            if (!depsToRemove.includes(scopedName)) {
-              depsToRemove.push(scopedName);
-            }
-            _.pull(depsToAdd, localDepAddCmd);
+            // Add to the dependencies to remove and strip from the package so it won't be tested for relink.
+            const scopedName = scopify(dep, repoName);
+            depsToRemove.push(scopedName);
+            initHoistedPack.dependencies[scopedName] = 'removing...';
             _.pull(myPack.localDependencies, dep);
             _.pull(myPack.localDevDependencies, dep);
           }
@@ -150,6 +93,74 @@ export default async function addRemove(dependencies, type, config, cwd) {
         depsToRemove.push(dep);
       }
     }
+  }
+
+  // get the list of local dependencies that could be relinked
+  let possibleLocalDeps
+  if (config.production) {
+    possibleLocalDeps = myPack.localDependencies;
+  } else {
+    possibleLocalDeps = myPack.localDependencies.concat(myPack.localDevDependencies);
+  }
+
+  const myTmpDir = path.join(myProjectDir, '.poly/tmp');
+  const tmpTarballsDir = path.join(myTmpDir, randomString(8));
+  const ourTarballsDir = path.join(myProjectDir, '.poly/dependencies');
+
+  // figure out which local dependencies need to be relinked
+  for (const projectName of possibleLocalDeps) {
+    let should = false;
+    let finalTarballPath;
+    if (sameRepo) {
+      // find the project's tarball original location
+      // will abort if the tarball does not exist
+      const project = repo.projects[projectName];
+      const originalTarballPath = await getTarballPath(project);
+
+      // copy the tarballs into a temporary directory
+      const filename = path.parse(originalTarballPath).base;
+      await moveFile(originalTarballPath, path.join(tmpTarballsDir, filename), true);
+      finalTarballPath = path.join(ourTarballsDir, filename);
+
+      if (config.force) {
+        should = true;
+      } else {
+        const hash = md5(await fs.readFile(originalTarballPath));
+        const localDep = fallback(myProject.local_dependencies[projectName], myProject.local_dev_dependencies[projectName]);
+        if (hash !== localDep) {
+          should = true;
+        }
+      }
+    } else {
+      if (config.install) {
+        const tarballs = await glob(path.join(ourTarballsDir, `${projectName}*`));
+        if (tarballs.length == 0) {
+          throw Error(`Cannot find a tarball for "${projectName}" in .poly/dependencies`);
+        } else if (tarballs.length > 1) {
+          throw Error(`"${projectName}" has multiple dependency tarballs in .poly/dependencies. Make sure there is only one tarball per dependency.`);
+        }
+
+        finalTarballPath = tarballs[0];
+        should = true;
+      }
+    }
+
+    const scopedName = scopify(projectName, repoName);
+    const localDepVal = makeLocalDepVal(finalTarballPath);
+    initHoistedPack.dependencies[scopedName] = localDepVal;
+
+    if (should) {
+      const addCmd = makeLocalDepAddCmd(scopedName, localDepVal);
+      depsToRemove.push(scopedName);
+      depsToAdd.push(addCmd);
+    }
+  }
+
+  if (sameRepo) {
+    // copy the temporary tarballs into the main directory
+    await rimraf(ourTarballsDir);
+    await copyDirectory(tmpTarballsDir, ourTarballsDir);
+    await rimraf(myTmpDir);
   }
 
   // Through this next section, we modify the real package.json. 

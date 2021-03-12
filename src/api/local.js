@@ -5,7 +5,7 @@ import add from './add';
 import remove from './remove';
 import _ from 'lodash';
 
-export default async function local(projects, nextCmd, config, cwd) {
+export default async function local(projects, nextCmd, config = {}, cwd) {
   if (!isOneOf(nextCmd, 'add', 'remove')) {
     throw Error('nextCmd must be one of "add" or "remove"');
   }

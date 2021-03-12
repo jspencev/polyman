@@ -1,5 +1,5 @@
 /.nyc_output
-/.poly
+/.poly/*
 /node_modules
 /coverage
 /tmp
@@ -9,6 +9,7 @@
 /yarn-error.log
 
 #! .gitignore
+!/.poly/dependencies
 /dist
 /test/tmp
 

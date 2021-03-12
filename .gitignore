@@ -4,7 +4,7 @@
 
 # These rules apply in all .ignore files:
 /.nyc_output
-/.poly
+/.poly/*
 /node_modules
 /coverage
 /tmp
@@ -14,5 +14,6 @@
 /yarn-error.log
 
 # These rules apply just to .gitignore:
+!/.poly/dependencies
 /dist
 /test/tmp

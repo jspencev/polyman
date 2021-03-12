@@ -1,4 +1,4 @@
-import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory, getBuiltTarballDir, getBuiltTarballPath } from '%/util';
+import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory, getBuiltTarballDir, getBuiltTarballPath, copyDirectory } from '%/util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFile, isFile } from '@jspencev/node-util';
 import { sortObject, isOneTruthy } from '@jspencev/util';
 import pack from './private/pack';
@@ -235,38 +235,6 @@ export default async function build(config = {}, cwd) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-async function copyDirectory(from, to, filter) {
-  const globPattern = path.join(from, '**', '*');
-  let filesToCopy;
-  if (filter) {
-    if (typeof filter === 'function') {
-      const res = await glob(globPattern, {
-        dot: true
-      });
-      filesToCopy = [];
-      for (const filepath of res) {
-        if (await filter(filepath)) {
-          filesToCopy.push(filepath);
-        }
-      }
-    } else {
-      filesToCopy = await glob(globPattern, filter);
-    }
-  } else {
-    filesToCopy = await glob(globPattern, {
-      dot: true
-    });
-  }
-
-  for (const filepath of filesToCopy) {
-    if (await isFile(filepath)) {
-      const oldRel = path.relative(from, filepath);
-      const newPath = path.resolve(to, oldRel);
-      await moveFile(filepath, newPath, true);
-    }
-  }
-}
 
 async function getDepVersions(packOb, repo, appRootPath, depVersions = {__locals: {}}) {
   for (const dep in packOb.dependencies) {

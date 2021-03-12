@@ -1,5 +1,6 @@
 import addDependenciesToProject from './addDependenciesToProject';
 import cleanYarnLock from './cleanYarnLock';
+import copyDirectory from './copyDirectory';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import descopify from './descopify';
 import findRepository from './findRepository';
@@ -20,6 +21,7 @@ import yarn from './yarn';
 export {
   addDependenciesToProject,
   cleanYarnLock,
+  copyDirectory,
   deleteFromYarnCache,
   descopify,
   findRepository,
