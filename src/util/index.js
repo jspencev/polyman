@@ -3,7 +3,10 @@ import cleanYarnLock from './cleanYarnLock';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import descopify from './descopify';
 import findRepository from './findRepository';
+import getBuiltTarballDir from './getBuiltTarballDir';
+import getBuiltTarballPath from './getBuiltTarballPath';
 import getMigrations from './getMigrations';
+import getTarballFilename from './getTarballFilename';
 import hashDirectory from './hashDirectory';
 import isRepoProject from './isRepoProject';
 import isSameRepo from './isSameRepo'
@@ -20,7 +23,10 @@ export {
   deleteFromYarnCache,
   descopify,
   findRepository,
+  getBuiltTarballDir,
+  getBuiltTarballPath,
   getMigrations,
+  getTarballFilename,
   hashDirectory,
   isRepoProject,
   isSameRepo,

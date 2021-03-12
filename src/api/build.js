@@ -1,4 +1,4 @@
-import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory } from '%/util';
+import { yarn, findRepository, writeJSONToFile, scopify, hashDirectory, getBuiltTarballDir, getBuiltTarballPath } from '%/util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, moveFile, isFile } from '@jspencev/node-util';
 import { sortObject, isOneTruthy } from '@jspencev/util';
 import pack from './private/pack';
@@ -20,7 +20,7 @@ import gitignoreToGlob from 'gitignore-to-glob';
 
 const LOCALS_DIR = '.poly_lib';
 
-export default async function build(config, cwd) {
+export default async function build(config = {}, cwd) {
   const appRootPath = await getAppRootPath(cwd);
   const {repo, repoPath} = await findRepository(cwd);
   const repoDir = path.parse(repoPath).dir;
@@ -31,10 +31,11 @@ export default async function build(config, cwd) {
   const myProjectName = myPack.name;
   let myProject = repo.projects[myProjectName];
   
-  if (!config.force) { // for now, builds always run
+  if (!config.force) {
     const hash = await hashDirectory(myProject.local_path);
     if (myProject.hash === hash) {
-      return false;
+      const tarballPath = await getBuiltTarballPath(appRootPath);
+      return {didBuild: false, tarballPath};
     }
   }
 
@@ -197,12 +198,13 @@ export default async function build(config, cwd) {
   await writeJSONToFile(path.join(finalPackDir, 'package.json'), myTmpPack);
 
   // pack the project
-  const tarballDir = path.join(myProject.local_path, '.poly', 'build');
+
   let buildFailed = false;
   let tarballPath;
   let hash;
   try {
-    tarballPath = await pack(finalPackDir, tarballDir);
+    const builtTarballDir = await getBuiltTarballDir(appRootPath);
+    tarballPath = await pack(finalPackDir, builtTarballDir);
     repo.projects[myProjectName] = tarballPath;
     hash = await hashDirectory(myProject.local_path);
   } catch (e) {
@@ -224,7 +226,7 @@ export default async function build(config, cwd) {
   const tmpDir = path.join(repoDir, '.poly', 'tmp');
   await rimraf(tmpDir);
 
-  return true;
+  return {didBuild: true, tarballPath};
 }
 
 ///////////////////////////////////////////////////////////////////////////////

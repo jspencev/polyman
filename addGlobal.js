@@ -1,24 +1,32 @@
-import { deleteFromYarnCache, yarn, findRepository, cleanYarnLock } from './src/util';
+import { deleteFromYarnCache, yarn, cleanYarnLock, readJSONFile, YARN_CMD } from '%/util';
+import { build } from '%/api';
+import { getAppRootPath, spawnChildProcess } from '@jspencev/node-util';
+import path from 'path';
+
+let repoName;
+let yarnGlobalDir;
 
 (async function() {
-  const {repo} = await findRepository(__dirname);
-  await cleanYarnLock(process.env.YARN_GLOBAL_DIR, repo);
-  await deleteFromYarnCache('polyman');
+  const appRootPath = await getAppRootPath(__dirname);
+  const polyConfig = await readJSONFile(path.join(appRootPath, 'config.poly'));
+  repoName = polyConfig.repository_name;
+
+  yarnGlobalDir = (await spawnChildProcess(YARN_CMD, 'global dir', {stdio: 'pipe'})).result;
+  await clean();
 
   try {
     await yarn('global remove polyman');
   } catch (e) {}
 
-  await cleanYarnLock(process.env.YARN_GLOBAL_DIR, repo);
-  await deleteFromYarnCache('polyman');
+  await clean();
 
-  const tarballPath = repo.projects.polyman.tarball;
-  if (tarballPath) {
-    await yarn(`global add file:${tarballPath}`);
-  } else {
-    throw Error(`Repo doesn't have "tarball" key for project "polyman"`);
-  }
+  const {tarballPath} = await build();
+  await yarn(`global add file:${tarballPath}`);
 
-  await cleanYarnLock(process.env.YARN_GLOBAL_DIR, repo);
-  await deleteFromYarnCache('polyman');
+  await clean();
 })();
+
+async function clean() {
+  await cleanYarnLock(yarnGlobalDir, repoName);
+  await deleteFromYarnCache('polyman');
+}
