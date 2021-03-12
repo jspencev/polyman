@@ -2,6 +2,7 @@ import thenify from 'thenify';
 import _glob from 'glob';
 const glob = thenify(_glob);
 import path from 'path';
+import compareVersions from 'compare-versions';
 
 export default async function getMigrations() {
   const migrationsDir = path.resolve(__dirname, '../migrations');
@@ -11,6 +12,6 @@ export default async function getMigrations() {
     const version = path.parse(file).name;
     versions.push(version);
   }
-  versions.sort();
+  versions.sort(compareVersions);
   return versions;
 }
