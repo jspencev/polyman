@@ -33,7 +33,7 @@ export default async function build(config = {}, cwd) {
   
   if (!config.force) {
     const hash = await hashDirectory(myProject.local_path);
-    if (myProject.hash === hash) {
+    if (myProject.dir_hash === hash) {
       const tarballPath = await getBuiltTarballPath(appRootPath);
       return {didBuild: false, tarballPath};
     }
@@ -215,7 +215,7 @@ export default async function build(config = {}, cwd) {
   }
 
   myProject.tarball = tarballPath;
-  myProject.hash = hash;
+  myProject.dir_hash = hash;
   repo.projects[myProjectName] = myProject;
   await writeJSONToFile(repoPath, repo);
 

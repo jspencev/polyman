@@ -71,7 +71,8 @@ export default async function addRemove(dependencies, type, config, cwd) {
 
       if (!config.force && project.local_path) {
         const hash = md5(await fs.readFile(tarballPath));
-        if (myProject.local_dependencies[projectName] === hash) {
+        const localDep = fallback(myProject.local_dependencies[projectName], myProject.local_dev_dependencies[projectName]);
+        if (localDep === hash) {
           shouldRelink = false;
         }
       }

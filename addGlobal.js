@@ -10,8 +10,10 @@ let yarnGlobalDir;
   const appRootPath = await getAppRootPath(__dirname);
   const polyConfig = await readJSONFile(path.join(appRootPath, 'config.poly'));
   repoName = polyConfig.repository_name;
-
   yarnGlobalDir = (await spawnChildProcess(YARN_CMD, 'global dir', {stdio: 'pipe'})).result;
+
+  const {tarballPath} = await build();
+
   await clean();
 
   try {
@@ -20,7 +22,6 @@ let yarnGlobalDir;
 
   await clean();
 
-  const {tarballPath} = await build();
   await yarn(`global add file:${tarballPath}`);
 
   await clean();

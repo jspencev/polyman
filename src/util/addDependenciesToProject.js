@@ -20,10 +20,10 @@ export default function addDependenciesToProject(project, pack, repo, organize =
   const localDeps = {};
   const localDevDeps = {};
   for (const localProjectName of localDependencies) {
-    localDeps[localProjectName] = repo.projects[localProjectName].hash;
+    localDeps[localProjectName] = repo.projects[localProjectName].dir_hash;
   }
   for (const localDevProjectName of localDevDependencies) {
-    localDevDeps[localDevProjectName] = repo.projects[localDevProjectName].hash;
+    localDevDeps[localDevProjectName] = repo.projects[localDevProjectName].dir_hash;
   }
 
   project.dependencies = dependencies;
