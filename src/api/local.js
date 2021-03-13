@@ -1,11 +1,11 @@
 import { findRepository, writeJSONToFile } from '%/util';
 import { findPackage } from '@jspencev/node-util';
-import { isOneOf } from '@jspencev/util';
+import { isOneOf, fallback } from '@jspencev/util';
 import add from './add';
 import remove from './remove';
 import _ from 'lodash';
 
-export default async function local(projects, nextCmd, config, cwd) {
+export default async function local(projects, nextCmd, config = {}, cwd) {
   if (!isOneOf(nextCmd, 'add', 'remove')) {
     throw Error('nextCmd must be one of "add" or "remove"');
   }
@@ -49,7 +49,7 @@ export default async function local(projects, nextCmd, config, cwd) {
   if (nextCmd === 'add') {
     ({repo} = await add(projects, config, cwd));
     if (config.build) {
-      const buildDeps = repo.projects[myName].build_dependencies;
+      const buildDeps = fallback(repo.projects[myName].build_dependencies, []);
       for (const projectName of projects) {
         if (!buildDeps.includes(projectName)) {
           buildDeps.push(projectName);

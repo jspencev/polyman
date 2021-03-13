@@ -3,25 +3,30 @@
 # Refer to https://github.com/jspencev/commonignore for more info.
 
 # These rules apply in all .ignore files:
-/.poly
+/.nyc_output
+/.poly/*
 /node_modules
-.env
-tmp.js
-tmp2.js
-yarn-error.log
+/coverage
+/tmp
+/.env
+/tmp.js
+/tmp2.js
+/yarn-error.log
 
 # These rules apply just to .npmignore:
 /.vscode
 /build
 /src
+/test
 /.commonignore
 /.envrc
 /.gitignore
 /.nvmrc
-addGlobal.js
-alias.config.js
-babel.config.js
-commitlint.config.js
-config.poly
-jsconfig.json
-yarn.lock
+/addGlobal.js
+/alias.config.js
+/babel.config.js
+/commitlint.config.js
+/config.poly
+/jsconfig.json
+/migrate.js
+/yarn.lock

@@ -19,6 +19,11 @@ module.exports = function (api) {
     }]
   ];
 
+  if (process.env.NODE_ENV === 'test') {
+    plugins.push('babel-plugin-istanbul');
+    plugins.push('babel-plugin-rewire');
+  }
+
   return {
     presets,
     plugins

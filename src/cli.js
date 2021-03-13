@@ -1,12 +1,10 @@
-import { init, add, local, remove, bootstrap, build, clone, install, relink } from '%/api';
-import { yarn } from '%/util';
+import { init, add, local, remove, bootstrap, build, clone, install, relink, initRepo } from '%/api';
+import { yarn, migrate, readJSONFile } from '%/util';
 import { getAppRootPath, launchBabelDebug } from '@jspencev/node-util';
 import { isOneOf, fallback, isOneTruthy } from '@jspencev/util';
-const inquirer = require('inquirer');
-const thenifyAll = require('thenify-all');
-const fs = thenifyAll(require('fs'));
-const path = require('path');
-const _ = require('lodash');
+import inquirer from 'inquirer'
+import path from 'path';
+import _ from 'lodash';
 
 const OPTIONS = {
   all: {
@@ -46,6 +44,10 @@ const OPTIONS = {
     alias: 'debug-brk',
     description: 'Pass inspect-brk to the node process'
   },
+  noMigrate: {
+    type: 'boolean',
+    description: 'Do not run repository migrations'
+  },
   optional: {
     type: 'boolean',
     description: 'Add as optional dependency'
@@ -58,13 +60,17 @@ const OPTIONS = {
     type: 'boolean',
     description: 'Install for production'
   },
+  repo: {
+    type: 'boolean',
+    description: 'Init a repo'
+  },
   tilde: {
     type: 'boolean',
     description: 'Installs most recent release of a package with the same minor version'
   }
 };
 
-async function cli(exec = false) {
+export default async function cli(exec = false) {
   let yargs = require('yargs')
     .command('init', 'Init a project in this directory')
     .command('install', 'Install a project')
@@ -120,7 +126,7 @@ async function cli(exec = false) {
   }
   try {
     const configPath = path.join(appRootPath, 'config.poly');
-    fileConfig = JSON.parse(await fs.readFile(configPath));
+    fileConfig = await readJSONFile(configPath);
   } catch(e) {
     // not found
     fileConfig = {};
@@ -136,48 +142,69 @@ async function cli(exec = false) {
   const config = _.merge({}, defaultConfig, fileConfig, argvConfig);
 
   const command = argv._[0];
+
+
+  // attempt to migrate the polyrepo to the most up-to-date version
+  if (command !== 'node' && !config.noMigrate) {
+    try {
+      await migrate();
+    } catch (e) {}
+  }
+
   if (command === 'init') {
-    let questions = [{
-      type: 'confirm',
-      name: 'nvm',
-      message: 'Would you like to create .nvmrc?',
-      default: true
-    }];
-    const {nvm} = await inquirer.prompt(questions);
-    let nvmVersion;
-    if (nvm) {
-      questions = [{
+    if (config.repo) {
+      const cwd = process.cwd();
+      const guessName = _.last(cwd.split(path.sep));
+      const questions = [{
         type: 'input',
-        name: 'nvmVersion',
-        message: 'Which version of node would you like to use?',
-        default: 'latest'
+        name: 'name',
+        message: 'Name:',
+        default: guessName
       }];
-      ({nvmVersion} = await inquirer.prompt(questions));
-      if (nvmVersion === 'latest') {
-        nvmVersion = 'node';
-      }
-    }
-
-    questions = [{
-      type: 'confirm',
-      name: 'dotenv',
-      message: 'Would you like to create .env with NODE_ENV=development?',
-      default: true
-    }];
-    const {dotenv} = await inquirer.prompt(questions);
-
-    let envrc = false;
-    if (nvm || dotenv) {
-      questions = [{
+      const answers = await inquirer.prompt(questions);
+      await initRepo(answers.name, cwd);
+    } else {
+      let questions = [{
         type: 'confirm',
-        name: 'envrc',
-        message: 'Would you like to create .envrc?',
+        name: 'nvm',
+        message: 'Would you like to create .nvmrc?',
         default: true
       }];
-      ({envrc} = await inquirer.prompt(questions));
+      const {nvm} = await inquirer.prompt(questions);
+      let nvmVersion;
+      if (nvm) {
+        questions = [{
+          type: 'input',
+          name: 'nvmVersion',
+          message: 'Which version of node would you like to use?',
+          default: 'latest'
+        }];
+        ({nvmVersion} = await inquirer.prompt(questions));
+        if (nvmVersion === 'latest') {
+          nvmVersion = 'node';
+        }
+      }
+  
+      questions = [{
+        type: 'confirm',
+        name: 'dotenv',
+        message: 'Would you like to create .env with NODE_ENV=development?',
+        default: true
+      }];
+      const {dotenv} = await inquirer.prompt(questions);
+  
+      let envrc = false;
+      if (nvm || dotenv) {
+        questions = [{
+          type: 'confirm',
+          name: 'envrc',
+          message: 'Would you like to create .envrc?',
+          default: true
+        }];
+        ({envrc} = await inquirer.prompt(questions));
+      }
+      await init(true, true, nvmVersion, dotenv, envrc);
     }
-
-    await init(true, true, nvmVersion, dotenv, envrc);
   } else if (command === 'install') {
     await install(config);
   } else if (command === 'add') {
@@ -229,5 +256,3 @@ async function cli(exec = false) {
 
   console.log('== DONE ==');
 }
-
-module.exports = cli;

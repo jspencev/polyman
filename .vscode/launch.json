@@ -12,7 +12,24 @@
         "<node_internals>/**"
       ],
       "type": "node"
+    },
+    {
+      "name": "Run Test",
+      "program": "${workspaceFolder}/node_modules/.bin/testrun",
+      "args": [
+        "--location",
+        "${file}",
+        "--skip-coverage",
+        "--debug"
+      ],
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "autoAttachChildProcesses": true
     }
-
   ]
 }

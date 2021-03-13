@@ -1,11 +1,12 @@
 import { findRepository, addDependenciesToProject } from '%/util';
 import { findPackage } from '@jspencev/node-util';
-import { fallback, concatMoveToBack, concatMoveToFront } from '@jspencev/util';
+import { fallback, concatMoveToBack, concatMoveToFront, pushUnique } from '@jspencev/util';
 import build from './build';
 import relink from './relink';
-const chalk = require('chalk');
+import chalk from 'chalk';
+import _ from 'lodash';
 
-export default async function bootstrap(config, cwd) {
+export default async function bootstrap(config = {}, cwd) {
   console.warn(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
   console.warn(chalk.yellow('PAIN AND SUFFERING AWAITS THOSE WHO EXIT THIS PROCESS.'));
 
@@ -83,7 +84,7 @@ async function runBootstrap(config, cwd) {
     const localPath = repo.projects[projectName].local_path;
     console.log(chalk.cyan('cd ' + localPath));
     console.log(chalk.cyan('poly relink'));
-    await relink({}, localPath);
+    await relink(config, localPath);
     console.log(chalk.cyan('poly build'));
     await build(config, localPath);
   }
@@ -117,6 +118,12 @@ function getConnectedProjects(projectName, repo, dev = false, passDev = false, c
       allDeps = allDeps.concat(Object.keys(project.local_dev_dependencies));
     }
   }
+  if (project.build_dependencies) {
+    for (const buildDep of project.build_dependencies) {
+      pushUnique(allDeps, buildDep);
+    }
+  }
+
   for (const dep of allDeps) {
     if (!connectedProjects.includes(dep)) {
       connectedProjects.push(dep);
@@ -135,8 +142,29 @@ function getConnectedProjects(projectName, repo, dev = false, passDev = false, c
 }
 
 function getRunOrder(projectName, projectMap) {
-  let {runOrder, hitProject} = generateRunOrder(projectName, projectMap, []);
-  if (runOrder[runOrder.length - 1] !== projectName) {
+  const myCriticalDeps = getCriticalDeps(projectName, projectMap);
+  let {runOrder, hitProject} = generateRunOrder(projectName, projectMap);
+
+  let nro = [];
+  for (const dep of runOrder) {
+    const criticalDeps = getCriticalDeps(dep, projectMap);
+    criticalDeps.push(dep);
+    nro = concatNoDouble(nro, criticalDeps);
+  }
+  runOrder = concatNoDouble(nro, runOrder);
+
+  let found = false;
+  while (!found) {
+    if (!myCriticalDeps.includes(_.last(runOrder))) {
+      runOrder.pop();
+    } else {
+      found = true;
+    }
+  }
+
+  runOrder = _.uniq(runOrder.reverse()).reverse();
+
+  if (_.last(runOrder) !== projectName) {
     runOrder.push(projectName);
   }
 
@@ -145,7 +173,7 @@ function getRunOrder(projectName, projectMap) {
     const gro = generateRunOrder(devDep, projectMap, [devDep], hitProject);
     hitProject = gro.hitProject;
     const ro = gro.runOrder;
-    if (ro[ro.length - 1] !== devDep) {
+    if (_.last(ro) !== devDep) {
       ro.push(devDep);
     }
     for (const item of ro) {
@@ -155,7 +183,7 @@ function getRunOrder(projectName, projectMap) {
     }
   }
 
-  if (runOrder[runOrder.length - 1] !== projectName) {
+  if (_.last(runOrder) !== projectName) {
     runOrder.push(projectName);
   }
   
@@ -166,11 +194,27 @@ function generateRunOrder(projectName, projectMap, runOrder = [], hitProject = {
   if (!hitProject[projectName]) {
     hitProject[projectName] = true;
 
-    const deps = projectMap[projectName].dependencies.concat(projectMap[projectName].build_dependencies);
+    const deps = getCriticalDeps(projectName, projectMap);
     runOrder = concatMoveToFront(runOrder, deps);
     for (const dep of deps) {
       ({runOrder, hitProject} = generateRunOrder(dep, projectMap, runOrder, hitProject));
     }
   }
   return {runOrder, hitProject};
+}
+
+function getCriticalDeps(projectName, projectMap) {
+  const deps = projectMap[projectName].dependencies.concat(projectMap[projectName].build_dependencies);
+  return deps;
+}
+
+function concatNoDouble(...arrs) {
+  let final = [];
+  for (const arr of arrs) {
+    if (_.last(final) === arr[0]) {
+      final.pop();
+    }
+    final = final.concat(arr);
+  }
+  return final;
 }

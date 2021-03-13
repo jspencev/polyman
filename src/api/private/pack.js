@@ -1,13 +1,12 @@
 import { moveFile } from '@jspencev/node-util';
-const path = require('path');
-import { yarn } from '%/util';
-import generateTarballName from './generateTarballName';
+import path from 'path';
+import { yarn, getTarballFilename, getBuiltTarballDir } from '%/util';
 import chalk from 'chalk';
 
 /**
  * Packs the specified project into a tarball at the tarball path.
- * @param {*|String} project - Dependency project object or the project directory.
- * @param {String} tarballDir - Directory to place the new 
+ * @param {*|String} project - Project object or the project directory.
+ * @param {String} tarballDir - Directory to place the generated tarball.
  * @returns {String} - Absolute path of the generated tarball.
  */
 export default async function pack(project, tarballDir) {
@@ -18,8 +17,14 @@ export default async function pack(project, tarballDir) {
   } else {
     projectDir = project.local_path;
   }
+
+  if (!tarballDir) {
+    tarballDir = await getBuiltTarballDir(projectDir);
+  }
+
   await yarn('pack', projectDir);
-  const filename = await generateTarballName(projectDir);
+  
+  const filename = await getTarballFilename(projectDir);
   const generatedTarball = path.join(projectDir, filename);
   const finalTarball = path.join(tarballDir, filename);
   await moveFile(generatedTarball, finalTarball);

@@ -9,7 +9,7 @@ import YARN_CMD from './YARN_CMD';
  * @param {String} cwd - Absolute path to directory in which to execute the yarn command.
  */
 export default async function yarn(command, cwd = process.cwd()) {
-  await deleteFromYarnCache();
+  await deleteFromYarnCache(null, cwd);
   await cleanYarnLock(cwd);
 
   if (typeof command === 'string') {
@@ -23,7 +23,7 @@ export default async function yarn(command, cwd = process.cwd()) {
     cwd: cwd
   });
 
-  await deleteFromYarnCache();
+  await deleteFromYarnCache(null, cwd);
   await cleanYarnLock(cwd);
 
   if (code !== 0) {

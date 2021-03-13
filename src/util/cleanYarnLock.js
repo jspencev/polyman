@@ -1,48 +1,57 @@
 import { getAppRootPath, writeFileIfNotExist } from '@jspencev/node-util';
-import findRepository from './findRepository';
-const lockfile = require('@yarnpkg/lockfile')
-const path = require('path');
-const thenifyAll = require('thenify-all');
-const fs = thenifyAll(require('fs'));
-const eol = require('eol');
+import { readJSONFile } from '%/util';
+import * as lockfile from '@yarnpkg/lockfile';
+import path from 'path';
+import thenifyAll from 'thenify-all';
+import _fs from 'fs';
+const fs = thenifyAll(_fs);
+import eol from 'eol';
 
 /**
  * Deletes all @<REPO> references from the yarn lock file.
  * @param {String} cwd - Current working directory
+ * @param {String} repoName - Repository name to clear. Default from cwd config.poly
  */
-export default async function cleanYarnLock(cwd, repo) {
-  try {
-    let appRootPath;
-    if (!repo) {
-      ({repo} = await findRepository(cwd));
-    }
-    const scope = '@' + repo.name;
+export default async function cleanYarnLock(cwd, repoName) {
+  let appRootPath = await getAppRootPath(cwd);
+  if (!repoName) {
     try {
-      appRootPath = await getAppRootPath(cwd);
+      const polyConfig = await readJSONFile(path.join(appRootPath, 'config.poly'));
+      repoName = polyConfig.repository_name;
     } catch (e) {
-      // not inside polyman dir, assuming the file is at cwd
-      appRootPath = cwd;
+      // poly.config does not exist, abort
+      return;
     }
-    
-    const yarnLockPath = path.join(appRootPath, 'yarn.lock');
-    let lockStr = (await fs.readFile(yarnLockPath)).toString();
-    lockStr = eol.lf(lockStr);
-    const lock = lockfile.parse(lockStr)
-    const yarnLock = lock.object;
-    let startedRepo = false;
-    for (const rule in yarnLock) {
-      if (rule.startsWith(scope)) {
-        startedRepo = true;
-        delete yarnLock[rule];
-      } else {
-        if (startedRepo || !rule.startsWith('@')) {
-          break;
-        }
+  }
+
+  if (repoName.charAt(0) !== '@') {
+    repoName = `@${repoName}`;
+  }
+
+  const yarnLockPath = path.join(appRootPath, 'yarn.lock');
+  let lockStr;
+  try {
+    lockStr = (await fs.readFile(yarnLockPath)).toString();
+  } catch (e) {
+    // lockfile does not exist or cannot be read
+    return;
+  }
+
+  lockStr = eol.lf(lockStr);
+  const lock = lockfile.parse(lockStr)
+  const yarnLock = lock.object;
+  let startedRepo = false;
+  for (const rule in yarnLock) {
+    if (rule.startsWith(repoName)) {
+      startedRepo = true;
+      delete yarnLock[rule];
+    } else {
+      if (startedRepo || !rule.startsWith('@')) {
+        break;
       }
     }
-  
-  
-    const newLock = lockfile.stringify(yarnLock);
-    await writeFileIfNotExist(yarnLockPath, newLock);
-  } catch (e) {}
+  }
+
+  const newLock = lockfile.stringify(yarnLock);
+  await writeFileIfNotExist(yarnLockPath, newLock);
 }

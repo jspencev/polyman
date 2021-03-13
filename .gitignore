@@ -3,12 +3,17 @@
 # Refer to https://github.com/jspencev/commonignore for more info.
 
 # These rules apply in all .ignore files:
-/.poly
+/.nyc_output
+/.poly/*
 /node_modules
-.env
-tmp.js
-tmp2.js
-yarn-error.log
+/coverage
+/tmp
+/.env
+/tmp.js
+/tmp2.js
+/yarn-error.log
 
 # These rules apply just to .gitignore:
+!/.poly/dependencies
 /dist
+/test/tmp

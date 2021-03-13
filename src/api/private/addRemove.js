@@ -1,213 +1,229 @@
-import { isRepoProject, findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, hashDirectory } from '%/util';
-import { findPackage, isFile } from '@jspencev/node-util';
-import { isOneOf, sortObject } from '@jspencev/util';
+import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory, getTmpDir, getDependenciesDir, findInMyDependencies } from '%/util';
+import { findPackage, isFile, randomString, moveFile } from '@jspencev/node-util';
+import { isOneOf, sortObject, fallback, pushUnique } from '@jspencev/util';
 import _ from 'lodash';
 import chalk from 'chalk';
+import path from 'path';
+import md5 from 'md5';
+import thenifyAll from 'thenify-all';
+import thenify from 'thenify';
+import _fs from 'fs';
+const fs = thenifyAll(_fs);
+import _rimraf from 'rimraf';
+const rimraf = thenify(_rimraf);
 
-export default async function addRemove(dependencies, type, config, cwd) {
+export default async function addRemove(dependencies, type, config = {}, cwd) {
   if (!isOneOf(type, 'add', 'remove')) {
     throw Error('Incorrect type. Must be one of "add" or "remove".');
   }
 
-  // Pull the repo and package.json. Save a copy of the original package.json in case we need to abort.
-  const {repo, repoPath} = await findRepository(cwd);
-  const fp = await findPackage(cwd);
-  const pack = fp.pack;
-  const packPath = fp.packPath;
-  const myProjectName = pack.name;
-  let myProject = repo.projects[myProjectName];
-  const originalPack = _.cloneDeep(pack);
-  
-  // verify that this package is a project of the repository
-  if (!isRepoProject(myProjectName, repo)) {
-    throw Error(`We could not find project "${myProjectName}" in the repository file`);
-  }
+  // pull the package and make a copy in case of abort
+  const {pack: myPack, packPath: myPackPath} = await findPackage(cwd);
+  const originalPack = _.cloneDeep(myPack);
 
-  // ensure that all relevant dependency fields are present
-  if (!pack.dependencies) {
-    pack.dependencies = {};
-  }
-  if (!pack.devDependencies) {
-    pack.devDependencies = {};
-  }
-  if (!pack.localDependencies) {
-    pack.localDependencies = [];
-  }
-  if (!pack.localDevDependencies) {
-    pack.localDevDependencies = [];
-  }
+  // determine whether the project is in the polyrepo or not
+  const myProjectName = myPack.name;
+  const myProjectDir = path.parse(myPackPath).dir;
+  const {sameRepo, repoName} = await isSameRepo(myProjectDir);
 
-  // Hoist the initial dependencies into a copy of the initial package.json state. This ensures we start with exactly what yarn last saw. 
-  // Yarn sometimes tries to undo our "mistakes" so we need to ensure yarn is happy before proceeding with modification.
-  // If a tarball is missing the modification is aborted.
-  const initHoistedPack = _.cloneDeep(pack);
-  const allInitLocalDeps = [];
-  for (const projectName of pack.localDependencies) {
-    const tarballPath = await getTarballPath(projectName, repo);
-    const scopedName = scopify(projectName, repo);
-    initHoistedPack.dependencies[scopedName] = `file:${tarballPath}`;
-    allInitLocalDeps.push(scopedName);
-  }
-  for (const devProjectName of pack.localDevDependencies) {
-    const tarballPath = await getTarballPath(devProjectName, repo);
-    const scopedName = scopify(devProjectName, repo);
-    initHoistedPack.devDependencies[scopedName] = `file:${tarballPath}`;
-    allInitLocalDeps.push(scopedName);
-  }
+  let repo;
+  let repoPath;
+  let myProject;
+  if (sameRepo) {
+    // get the repository and the project object for the project we're executing for
+    ({repo, repoPath} = await findRepository(myProjectDir));
+    myProject = repo.projects[myProjectName];
 
-  // Collect the final local dependencies for re-addition with yarn.
-  // If a tarball is missing the modification is aborted.
-  const localShouldRelink = {};
-  for (const projectName of pack.localDependencies) {
-    const project = repo.projects[projectName];
-    const {scopedName, modVal} = await generateLocalDepVal(projectName, repo);
-    let should = false;
-    if (!Array.isArray(myProject.local_dependencies)) {
-      const hash = await hashDirectory(project.local_path);
-      should = (myProject.local_dependencies[projectName] !== hash);
-    } else {
-      should = true;
-    }
-    if (should) {
-      localShouldRelink[scopedName] = modVal;
-    }
-  }
-  for (const devProjectName of pack.localDevDependencies) {
-    const devProject = repo.projects[devProjectName];
-    const {scopedName, modVal} = await generateLocalDepVal(devProjectName, repo);
-    let should = false;
-    if (!Array.isArray(myProject.local_dev_dependencies)) {
-      const hash = await hashDirectory(devProject.local_path);
-      should = (myProject.local_dev_dependencies[devProjectName] !== hash);
-    } else {
-      should = true;
-    }
-    if (should) {
-      localShouldRelink[scopedName] = modVal;
+    // verify that this project is a part of the repository
+    if (!myProject) {
+      throw Error(`Project "${myProjectName}" is not part of this repository.`);
     }
   }
 
-  // Collect the dependencies to remove and add
-  let depsToRemove = Object.keys(localShouldRelink);
-  let depsToAdd = Object.values(localShouldRelink);
-  let devDepsToAdd = [];
-  if (config.local) {
-    for (const newLocalDep of dependencies) {
-      if (!isRepoProject(newLocalDep, repo)) {
-        throw Error(`"${newLocalDep}" is not a project of this repository. Aborting...`);
-      }
+  // ensure that all relevant dependency fields are present in package.json
+  myPack.dependencies = fallback(myPack.dependencies, {});
+  myPack.devDependencies = fallback(myPack.devDependencies, {});
+  myPack.localDependencies = fallback(myPack.localDependencies, []);
+  myPack.localDevDependencies = fallback(myPack.localDevDependencies, []);
 
-      const {scopedName, modVal} = await generateLocalDepVal(newLocalDep, repo);
+  // hoist the initial dependencies into a copy of the initial package.json state
+  // This ensures we start with what yarn last saw. Yarn sometimes tries to undo our "mistakes" so we need to make sure yarn is happy before proceeding with modification.
+  const initHoistedPack = _.cloneDeep(myPack);
 
-      if (type === 'add') {
-        if (!depsToAdd.includes(modVal)) {
-          depsToAdd.push(modVal)
-        }
-
-        if (config.dev) {
-          if (!pack.localDevDependencies.includes(newLocalDep)) {
-            pack.localDevDependencies.push(newLocalDep);
+  // generate a list of dependencies to add/remove
+  const depsToRemove = [];
+  const depsToAdd = [];
+  const devDepsToAdd = [];
+  for (const dep of dependencies) {
+    if (config.local) {
+      if (sameRepo) {
+        const project = repo.projects[dep];
+        if (project) {
+          if (type === 'add') {
+            // Add to the package. The add command will be added later.
+            if (config.dev) {
+              pushUnique(myPack.localDevDependencies, dep);
+            } else {
+              pushUnique(myPack.localDependencies, dep);
+            }
+          } else {
+            // Add to the dependencies to remove and strip from the package so it won't be tested for relink.
+            const scopedName = scopify(dep, repoName);
+            depsToRemove.push(scopedName);
+            initHoistedPack.dependencies[scopedName] = 'removing...';
+            _.pull(myPack.localDependencies, dep);
+            _.pull(myPack.localDevDependencies, dep);
           }
         } else {
-          if (!pack.localDependencies.includes(newLocalDep)) {
-            pack.localDependencies.push(newLocalDep);
-          }
+          throw Error(`Project "${dep}" is not part of this repository.`);
         }
       } else {
-        if (!depsToRemove.includes(scopedName)) {
-          depsToRemove.push(scopedName);
-        }
-
-        const normPosition = pack.localDependencies.indexOf(newLocalDep);
-        if (normPosition !== -1) {
-          pack.localDependencies.splice(normPosition, 1);
-        }
-        const devPosition = pack.localDevDependencies.indexOf(newLocalDep);
-        if (devPosition !== -1) {
-          pack.localDevDependencies.splice(devPosition, 1);
-        }
-      }
-    }
-  } else {
-    if (type === 'add') {
-      if (config.dev) {
-        devDepsToAdd = devDepsToAdd.concat(dependencies);
-      } else {
-        depsToAdd = depsToAdd.concat(dependencies);
+        throw Error('Cannot modify local dependency when project not in the repository folder.');
       }
     } else {
-      depsToRemove = depsToRemove.concat(dependencies);
+      if (type === 'add') {
+        if (config.dev) {
+          devDepsToAdd.push(dep);
+        } else {
+          depsToAdd.push(dep);
+        }
+      } else {
+        depsToRemove.push(dep);
+      }
     }
+  }
+
+  // get the list of local dependencies that could be relinked
+  let possibleLocalDeps
+  if (config.production) {
+    possibleLocalDeps = myPack.localDependencies;
+  } else {
+    possibleLocalDeps = myPack.localDependencies.concat(myPack.localDevDependencies);
+  }
+
+  const myTmpDir = getTmpDir(myProjectDir);
+  const tmpTarballsDir = path.join(myTmpDir, randomString(8));
+  const myDepDir = getDependenciesDir(myProjectDir);
+
+  // figure out which local dependencies need to be relinked
+  for (const projectName of possibleLocalDeps) {
+    let should = false;
+    let finalTarballPath;
+    if (sameRepo) {
+      // find the project's tarball original location
+      // will abort if the tarball does not exist
+      const project = repo.projects[projectName];
+      const originalTarballPath = await getTarballPath(project);
+
+      // copy the tarballs into a temporary directory
+      const filename = path.parse(originalTarballPath).base;
+      await moveFile(originalTarballPath, path.join(tmpTarballsDir, filename), true);
+      finalTarballPath = path.join(myDepDir, filename);
+
+      if (config.force) {
+        should = true;
+      } else {
+        const hash = md5(await fs.readFile(originalTarballPath));
+        const localDep = fallback(myProject.local_dependencies[projectName], myProject.local_dev_dependencies[projectName]);
+        if (hash !== localDep) {
+          should = true;
+        }
+      }
+    } else {
+      if (config.install) {
+        finalTarballPath = await findInMyDependencies(myProjectDir, projectName);
+        should = true;
+      }
+    }
+
+    const scopedName = scopify(projectName, repoName);
+    const localDepVal = makeLocalDepVal(finalTarballPath);
+    initHoistedPack.dependencies[scopedName] = localDepVal;
+
+    if (should) {
+      const addCmd = makeLocalDepAddCmd(scopedName, localDepVal);
+      depsToRemove.push(scopedName);
+      depsToAdd.push(addCmd);
+    }
+  }
+
+  if (sameRepo) {
+    // copy the temporary tarballs into the main directory
+    await rimraf(myDepDir);
+    await copyDirectory(tmpTarballsDir, myDepDir);
+    await rimraf(myTmpDir);
   }
 
   // Through this next section, we modify the real package.json. 
-  // In case of an error, package.json is rolled back to it's initial state to prevent dependency loss.
+  // In case of an error, package.json is rolled back to it's initial state.
   try {
-    await writeJSONToFile(packPath, initHoistedPack);
+    // write hoised package
+    await writeJSONToFile(myPackPath, initHoistedPack);
 
-    // run remove
+    // remove dependencies that need to be removed
     if (depsToRemove.length > 0) {
       if (cwd) {
-        console.log(chalk.cyan('Running in: ') + cwd);
+        console.log(chalk.cyan('Running in: ') + myProjectDir);
       }
       console.log(chalk.cyan('yarn remove ' + depsToRemove.join(' ')));
-      await yarn(['remove'].concat(depsToRemove), cwd);
+      await yarn(['remove'].concat(depsToRemove), myProjectDir);
     }
 
-    // run dependency add
+    // add dependencies that need to be added
     if (depsToAdd.length > 0) {
       if (cwd) {
-        console.log(chalk.cyan('Running in: ') + cwd);
+        console.log(chalk.cyan('Running in: ') + myProjectDir);
       }
       console.log(chalk.cyan('yarn add ' + depsToAdd.join(' ')));
-      await yarn(['add'].concat(depsToAdd), cwd);
+      await yarn(['add'].concat(depsToAdd), myProjectDir);
     }
 
     // run devDependency add
     if (devDepsToAdd.length > 0) {
       if (cwd) {
-        console.log(chalk.cyan('Running in: ') + cwd);
+        console.log(chalk.cyan('Running in: ') + myProjectDir);
       }
       console.log(chalk.cyan('yarn add --dev ' + devDepsToAdd.join(' ')));
-      await yarn(['add', '--dev'].concat(devDepsToAdd), cwd);
+      await yarn(['add', '--dev'].concat(devDepsToAdd), myProjectDir);
     }
 
-    // pull the new package generated by yarn without local projects
-    const np = await findPackage(cwd);
-    const newPack = np.pack;
-    const newDeps = {};
-    const newDevDeps = {};
-    for (const dep in newPack.dependencies) {
-      if (!isRepoProject(dep, repo)) {
-        newDeps[dep] = newPack.dependencies[dep];
-      }
-    }
-    for (const devDep in newPack.devDependencies) {
-      if (!isRepoProject(devDep, repo)) {
-        newDevDeps[devDep] = newPack.devDependencies[devDep];
-      }
-    }
-    pack.dependencies = newDeps;
-    pack.devDependencies = newDevDeps;
+    // pull the new package generated by yarn
+    const {pack: newPack} = await findPackage(myProjectDir);
 
-    // Sort all dependencies and write the final package.
-    pack.dependencies = sortObject(pack.dependencies);
-    pack.devDependencies = sortObject(pack.devDependencies);
-    pack.localDependencies = pack.localDependencies.sort();
-    pack.localDevDependencies = pack.localDevDependencies.sort();
-    await writeJSONToFile(packPath, pack);
-
-    // Update the repository to reflect changes.
-    myProject = addDependenciesToProject(myProject, pack, repo);
-    if (!myProject.build_dependencies) {
-      myProject.build_dependencies = [];
+    // get the final list of local dependencies
+    let finalLocalDeps;
+    if (config.production) {
+      finalLocalDeps = myPack.localDependencies;
+    } else {
+      finalLocalDeps = myPack.localDependencies.concat(myPack.localDevDependencies);
     }
-    repo.projects[myProjectName] = myProject;
-    await writeJSONToFile(repoPath, repo);
+    
+    // remove local projects from dependencies
+    for (const projectName of finalLocalDeps) {
+      const scopedName = scopify(projectName, repoName);
+      delete newPack.dependencies[scopedName];
+    }
 
-    return {pack, repo};
+    myPack.dependencies = newPack.dependencies;
+    myPack.devDependencies = newPack.devDependencies;
+
+    // sort all dependencies and write the final package
+    myPack.dependencies = sortObject(myPack.dependencies);
+    myPack.devDependencies = sortObject(myPack.devDependencies);
+    myPack.localDependencies = myPack.localDependencies.sort();
+    myPack.localDevDependencies = myPack.localDevDependencies.sort();
+    await writeJSONToFile(myPackPath, myPack);
+
+    // update repository to reflect changes
+    if (sameRepo) {
+      myProject = addDependenciesToProject(myProject, myPack, repo);
+      repo.projects[myProjectName] = myProject;
+      await writeJSONToFile(repoPath, repo);
+    }
+
+    return {pack: myPack, repo};
   } catch (e) {
-    await writeJSONToFile(packPath, originalPack);
+    await writeJSONToFile(myPackPath, originalPack);
     throw e;
   }
 }
@@ -216,31 +232,42 @@ export default async function addRemove(dependencies, type, config, cwd) {
 
 /**
  * Gets the tarball path for a project and checks to make sure it exists.
- * An error is thrown and modification aborted if the tarball is missing.
- * @param {String} projectName - Project to get the tarball path for.
- * @param {*} repo - The repository object.
- * @returns {String} - Absolute path to the tarball for the submitted project.
+ * @param {*} project - The project object.
+ * @returns {String} - Absolute path to the project's tarball file.
  */
-async function getTarballPath(projectName, repo) {
-  const project = repo.projects[projectName];
+async function getTarballPath(project) {
   if (!project) {
-    throw Error(`We could not find project "${projectName}" in the repository file`);
+    throw Error(`We could not find project "${project.name}" in the repository file.`);
   }
 
   const tarballPath = project.tarball;
-  const err = `Project "${projectName}" must be built with polyman. Run "poly build" in the project directory.`;
+  const err = `Project "${project.name}" must be built with polyman. Run "poly build" in the project directory.`;
   if (!tarballPath) {
     throw Error(err);
   } else if (!(await isFile(tarballPath))) {
     throw Error(err);
   }
 
-  return tarballPath;   
+  return tarballPath; 
 }
 
-async function generateLocalDepVal(projectName, repo) {
-  const tarballPath = await getTarballPath(projectName, repo);
-  const scopedName = scopify(projectName, repo);
-  const modVal = `${scopedName}@file:${tarballPath}`;
-  return {modVal, scopedName};
+/**
+ * Makes tarball path into dependency value for package.json
+ * @param {String} tarballPath - Path to the tarball to be installed.
+ * @returns {String} - Dependency value for package.json
+ */
+function makeLocalDepVal(tarballPath) {
+  const val = `file:${tarballPath}`;
+  return val;
+}
+
+/**
+ * Makes the yarn add argument for the local dependency
+ * @param {String} scopedName - Scoped dependency name.
+ * @param {String} localDepVal - Local dependency value for package.json.
+ * @returns {String} - Yarn add command.
+ */
+function makeLocalDepAddCmd(scopedName, localDepVal) {
+  const localDepAddCmd = `${scopedName}@${localDepVal}`;
+  return localDepAddCmd;
 }
