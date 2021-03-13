@@ -1,4 +1,4 @@
-import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory, getTmpDir, findInMyDependencies } from '%/util';
+import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory, getTmpDir, getDependenciesDir, findInMyDependencies } from '%/util';
 import { findPackage, isFile, randomString, moveFile } from '@jspencev/node-util';
 import { isOneOf, sortObject, fallback, pushUnique } from '@jspencev/util';
 import _ from 'lodash';
@@ -9,8 +9,6 @@ import thenifyAll from 'thenify-all';
 import thenify from 'thenify';
 import _fs from 'fs';
 const fs = thenifyAll(_fs);
-import _glob from 'glob';
-const glob = thenify(_glob);
 import _rimraf from 'rimraf';
 const rimraf = thenify(_rimraf);
 
