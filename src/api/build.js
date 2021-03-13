@@ -111,9 +111,6 @@ export default async function build(config = {}, cwd) {
   // }
   // myTmpPack.dependencies = sortObject(myTmpPack.dependencies);
 
-  // delete myTmpPack.localDependencies;
-  // delete myTmpPack.localDevDependencies;
-
   // // pull the contents of each local dependency into the build directory
   // const localDirs = {};
   // localDirs[scopify(myProjectName, repo)] = path.resolve(tmpPackDir, myTmpPack.main);
