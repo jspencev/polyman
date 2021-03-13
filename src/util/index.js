@@ -3,11 +3,14 @@ import cleanYarnLock from './cleanYarnLock';
 import copyDirectory from './copyDirectory';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import descopify from './descopify';
+import findInMyDependencies from './findInMyDependencies';
 import findRepository from './findRepository';
 import getBuiltTarballDir from './getBuiltTarballDir';
 import getBuiltTarballPath from './getBuiltTarballPath';
+import getDependenciesDir from './getDependenciesDir';
 import getMigrations from './getMigrations';
 import getTarballFilename from './getTarballFilename';
+import getTmpDir from './getTmpDir';
 import hashDirectory from './hashDirectory';
 import isRepoProject from './isRepoProject';
 import isSameRepo from './isSameRepo'
@@ -24,11 +27,14 @@ export {
   copyDirectory,
   deleteFromYarnCache,
   descopify,
+  findInMyDependencies,
   findRepository,
   getBuiltTarballDir,
   getBuiltTarballPath,
+  getDependenciesDir,
   getMigrations,
   getTarballFilename,
+  getTmpDir,
   hashDirectory,
   isRepoProject,
   isSameRepo,
