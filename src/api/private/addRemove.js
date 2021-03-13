@@ -1,4 +1,4 @@
-import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory } from '%/util';
+import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory, getTmpDir, findInMyDependencies } from '%/util';
 import { findPackage, isFile, randomString, moveFile } from '@jspencev/node-util';
 import { isOneOf, sortObject, fallback, pushUnique } from '@jspencev/util';
 import _ from 'lodash';
@@ -103,9 +103,9 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
     possibleLocalDeps = myPack.localDependencies.concat(myPack.localDevDependencies);
   }
 
-  const myTmpDir = path.join(myProjectDir, '.poly/tmp');
+  const myTmpDir = getTmpDir(myProjectDir);
   const tmpTarballsDir = path.join(myTmpDir, randomString(8));
-  const ourTarballsDir = path.join(myProjectDir, '.poly/dependencies');
+  const myDepDir = getDependenciesDir(myProjectDir);
 
   // figure out which local dependencies need to be relinked
   for (const projectName of possibleLocalDeps) {
@@ -120,7 +120,7 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
       // copy the tarballs into a temporary directory
       const filename = path.parse(originalTarballPath).base;
       await moveFile(originalTarballPath, path.join(tmpTarballsDir, filename), true);
-      finalTarballPath = path.join(ourTarballsDir, filename);
+      finalTarballPath = path.join(myDepDir, filename);
 
       if (config.force) {
         should = true;
@@ -133,14 +133,7 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
       }
     } else {
       if (config.install) {
-        const tarballs = await glob(path.join(ourTarballsDir, `${projectName}*`));
-        if (tarballs.length == 0) {
-          throw Error(`Cannot find a tarball for "${projectName}" in .poly/dependencies`);
-        } else if (tarballs.length > 1) {
-          throw Error(`"${projectName}" has multiple dependency tarballs in .poly/dependencies. Make sure there is only one tarball per dependency.`);
-        }
-
-        finalTarballPath = tarballs[0];
+        finalTarballPath = await findInMyDependencies(myProjectDir, projectName);
         should = true;
       }
     }
@@ -158,8 +151,8 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
 
   if (sameRepo) {
     // copy the temporary tarballs into the main directory
-    await rimraf(ourTarballsDir);
-    await copyDirectory(tmpTarballsDir, ourTarballsDir);
+    await rimraf(myDepDir);
+    await copyDirectory(tmpTarballsDir, myDepDir);
     await rimraf(myTmpDir);
   }
 
