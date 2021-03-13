@@ -1,7 +1,4 @@
 import path from 'path';
-import _fs from 'fs';
-import thenifyAll from 'thenify-all';
-const fs = thenifyAll(_fs);
 import { writeJSONToFile, findRepository, getMigrations } from '%/util';
 import chalk from 'chalk'
 import _ from 'lodash';
