@@ -1,14 +1,14 @@
-import { expect, sinon, descriptions } from '@jspencev/test-util';
-import addRemove, { __RewireAPI__ as Rewire } from '%/api/private/addRemove';
-import _ from 'lodash';
-import path from 'path';
+// import { expect, sinon, descriptions } from '@jspencev/test-util';
+// import addRemove, { __RewireAPI__ as Rewire } from '%/api/private/addRemove';
+// import _ from 'lodash';
+// import path from 'path';
 
-const REPO_NAME = 'foo-repo';
-const REPO_DIR = '/foo';
-const REPO_PATH = path.join(REPO_DIR, 'repository.poly');
-const PROJECT_NAME = 'local-bar';
-const PROJECT_DIR = path.join(REPO_DIR, 'local-bar');
-const PACK_PATH = path.join(PROJECT_DIR, 'package.json');
+// const REPO_NAME = 'foo-repo';
+// const REPO_DIR = '/foo';
+// const REPO_PATH = path.join(REPO_DIR, 'repository.poly');
+// const PROJECT_NAME = 'local-bar';
+// const PROJECT_DIR = path.join(REPO_DIR, 'local-bar');
+// const PACK_PATH = path.join(PROJECT_DIR, 'package.json');
 
 export default function() {
   // describe(descriptions.exportFn('addRemove'), function() {

@@ -1,10 +1,9 @@
-import { findRepository, writeJSONToFile, scopify, yarn, addDependenciesToProject, isSameRepo, copyDirectory, getTmpDir, getDependenciesDir, findInMyDependencies } from '%/util';
+import { findRepository, writeJSONToFile, scopify, yarn, isSameRepo, copyDirectory, getTmpDir, getDependenciesDir, findInMyDependencies, hashFile } from '%/util';
 import { findPackage, isFile, randomString, moveFile } from '@jspencev/node-util';
 import { isOneOf, sortObject, fallback, pushUnique } from '@jspencev/util';
 import _ from 'lodash';
 import chalk from 'chalk';
 import path from 'path';
-import md5 from 'md5';
 import thenifyAll from 'thenify-all';
 import thenify from 'thenify';
 import _fs from 'fs';
@@ -63,8 +62,10 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
             // Add to the package. The add command will be added later.
             if (config.dev) {
               pushUnique(myPack.localDevDependencies, dep);
+              myProject.local_dev_dependencies[dep] = 'init';
             } else {
               pushUnique(myPack.localDependencies, dep);
+              myProject.local_dependencies[dep] = 'init';
             }
           } else {
             // Add to the dependencies to remove and strip from the package so it won't be tested for relink.
@@ -123,10 +124,15 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
       if (config.force) {
         should = true;
       } else {
-        const hash = md5(await fs.readFile(originalTarballPath));
+        const hash = await hashFile(originalTarballPath);
         const localDep = fallback(myProject.local_dependencies[projectName], myProject.local_dev_dependencies[projectName]);
         if (hash !== localDep) {
           should = true;
+        }
+        if (myProject.local_dependencies[projectName]) {
+          myProject.local_dependencies[projectName] = hash;
+        } else if (myProject.local_dev_dependencies[projectName]) {
+          myProject.local_dev_dependencies[projectName] = hash;
         }
       }
     } else {
@@ -216,7 +222,11 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
 
     // update repository to reflect changes
     if (sameRepo) {
-      myProject = addDependenciesToProject(myProject, myPack, repo);
+      myProject.dependencies = myPack.dependencies;
+      myProject.dev_dependencies = myPack.devDependencies;
+      myProject.local_dependencies = _.pick(myProject.local_dependencies, myPack.localDependencies);
+      myProject.local_dev_dependencies = _.pick(myProject.local_dev_dependencies, myPack.localDevDependencies);
+      myProject.build_dependencies = fallback(myProject.build_dependencies, []);
       repo.projects[myProjectName] = myProject;
       await writeJSONToFile(repoPath, repo);
     }

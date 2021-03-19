@@ -1,4 +1,3 @@
-import addDependenciesToProject from './addDependenciesToProject';
 import cleanYarnLock from './cleanYarnLock';
 import copyDirectory from './copyDirectory';
 import deleteFromYarnCache from './deleteFromYarnCache';
@@ -12,6 +11,7 @@ import getMigrations from './getMigrations';
 import getTarballFilename from './getTarballFilename';
 import getTmpDir from './getTmpDir';
 import hashDirectory from './hashDirectory';
+import hashFile from './hashFile';
 import isRepoProject from './isRepoProject';
 import isSameRepo from './isSameRepo'
 import migrate from './migrate';
@@ -22,7 +22,6 @@ import YARN_CMD from './YARN_CMD';
 import yarn from './yarn';
 
 export {
-  addDependenciesToProject,
   cleanYarnLock,
   copyDirectory,
   deleteFromYarnCache,
@@ -36,6 +35,7 @@ export {
   getTarballFilename,
   getTmpDir,
   hashDirectory,
+  hashFile,
   isRepoProject,
   isSameRepo,
   migrate,
