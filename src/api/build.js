@@ -4,6 +4,7 @@ import {
   findRepository,
   getBuiltTarballDir,
   getBuiltTarballPath,
+  getDependenciesDir,
   getTmpDir,
   hashDirectory,
   isSameRepo,
@@ -28,7 +29,6 @@ import _fs from 'fs';
 const fs = thenifyAll(_fs);
 import ignore from 'ignore';
 import babelDir from '@babel/cli/lib/babel/dir';
-import md5 from 'md5';
 import tar from 'tar';
 import chalk from 'chalk';
 import { intersect as rangeIntersect } from 'semver-range-intersect';
@@ -41,13 +41,27 @@ export default async function build(config = {}, cwd) {
   const myProjectDir = await getAppRootPath(cwd);
   const {pack: myPack} = await findPackage(myProjectDir);
   const myProjectName = myPack.name;
+  
+  const myDepsDir = getDependenciesDir(myProjectDir);
+  const toFilterOut = [];
+  for (const dep of myPack.localDevDependencies) {
+    const tarball = await findInMyDependencies(myProjectDir, dep);
+    toFilterOut.push(tarball);
+  }
+  function hashDirFilter(filepath) {
+    const dir = path.parse(filepath).dir;
+    if (myDepsDir === dir && toFilterOut.includes(filepath)) {
+      return false;
+    }
+    return true;
+  }
 
   const {sameRepo, repoName} = await isSameRepo(myProjectDir);
 
   if (!config.force && sameRepo) {
     const {repo} = await findRepository(myProjectDir);
     const project = repo.projects[myProjectName];
-    const hash = await hashDirectory(project.local_path);
+    const hash = await hashDirectory(project.local_path, hashDirFilter);
     if (project.dir_hash === hash) {
       const tarballPath = await getBuiltTarballPath(myProjectDir);
       return {didBuild: false, tarballPath};
@@ -58,8 +72,6 @@ export default async function build(config = {}, cwd) {
   const myTmpDir = getTmpDir(myProjectDir);
   const tmpPackDir = path.join(myTmpDir, randomString(8));
   await mkdirIfNotExist(tmpPackDir);
-
-  console.log(chalk.magenta('Prepping local dependencies...'));
 
   // extract versions from my package.json
   const versions = extractDepVersions(myPack);
@@ -126,11 +138,10 @@ export default async function build(config = {}, cwd) {
 
   // call the yarn build script if exists
   if (myPack.scripts.build) {
-    console.log(chalk.cyan('poly build'));
     await yarn('build', myProjectDir);
   }
 
-  console.log(chalk.magenta('Prepping production package...'));
+  console.log(chalk.magenta('Prepping production package'));
 
   // get the npmignore (fallback to gitignore)
   let npmignore;
@@ -235,8 +246,7 @@ export default async function build(config = {}, cwd) {
     const {repo, repoPath} = await findRepository(myProjectDir);
     const myProject = repo.projects[myProjectName];
     myProject.tarball = tarballPath;
-    myProject.dir_hash = await hashDirectory(repo.projects[myProjectName].local_path);
-    myProject.tarball_hash = md5(await fs.readFile(tarballPath));
+    myProject.dir_hash = await hashDirectory(repo.projects[myProjectName].local_path, hashDirFilter);
     repo.projects[myProjectName] = myProject;
     await writeJSONToFile(repoPath, repo);
   }

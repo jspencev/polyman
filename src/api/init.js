@@ -35,7 +35,6 @@ export default async function init(prompt, git, nvmVersion, dotenv, envrc, cwd) 
     local_path: projectPath,
     git_repository: gitRepo,
     dir_hash: 'init',
-    tarball_hash: 'init',
     dependencies: {},
     dev_dependencies: {},
     local_dependencies: {},

@@ -1,16 +1,16 @@
 import { isFile } from '@jspencev/node-util';
-import { isOneTruthy } from '@jspencev/util';
+import { hashFile } from '%/util';
 import thenify from 'thenify';
 import _glob from 'glob';
 const glob = thenify(_glob);
 import path from 'path';
-import md5 from 'md5';
+import hashObj from 'hash-obj';
 import thenifyAll from 'thenify-all';
 import _fs from 'fs';
 const fs = thenifyAll(_fs);
 import ignore from 'ignore';
 
-export default async function hashDirectory(dir) {
+export default async function hashDirectory(dir, filter) {
   let gitignore = await fs.readFile(path.resolve(dir, '.gitignore'));
   gitignore = gitignore.toString();
   gitignore = ignore().add(gitignore);
@@ -22,24 +22,37 @@ export default async function hashDirectory(dir) {
   let files = await glob(path.join(dir, '**', '*'), {
     dot: true
   });
-  const newFiles = [];
+
+  const hashPromises = [];
   for (const filepath of files) {
     const relFilepath = path.relative(dir, filepath);
-    if (!isOneTruthy(
-      gitignore.ignores(relFilepath),
-      relFilepath.includes('.git')
-    )) {
-      newFiles.push(filepath);
+    let filtered = true;
+    if (filter) {
+      filtered = filter(filepath);
     }
-  }
-  files = newFiles;
 
-  let hash = '';
-  for (const file of files) {
-    if (await isFile(file)) {
-      hash += md5(await fs.readFile(file));
+    if (await isFile(filepath) && !(gitignore.ignores(relFilepath) || relFilepath.includes('.git')) && filtered) {
+      hashPromises.push(hashFilePromise(filepath, relFilepath));
     }
   }
-  hash = md5(hash);
+
+  const hashRes = await Promise.all(hashPromises);
+  const hashes = {};
+  for (const r of hashRes) {
+    hashes[r.file] = r.hash;
+  }
+
+  const options = {
+    encoding: 'base64',
+    algorithm: 'md5'
+  };
+  const hash = hashObj(hashes, options);
   return hash;
+}
+
+async function hashFilePromise(filepath, relFilepath) {
+  return {
+    file: relFilepath,
+    hash: await hashFile(filepath)
+  }
 }
