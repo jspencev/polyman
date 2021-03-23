@@ -13,10 +13,17 @@ import eol from 'eol';
  * @param {String} repoName - Repository name to clear. Default from cwd config.poly
  */
 export default async function cleanYarnLock(cwd, repoName) {
-  let appRootPath = await getAppRootPath(cwd);
+  let projectDir;
+  try {
+    projectDir = await getAppRootPath(cwd);
+  } catch (e) {
+    // package does not exist, abort
+    return;
+  }
+  
   if (!repoName) {
     try {
-      const polyConfig = await readJSONFile(path.join(appRootPath, 'config.poly'));
+      const polyConfig = await readJSONFile(path.join(projectDir, 'config.poly'));
       repoName = polyConfig.repository_name;
     } catch (e) {
       // poly.config does not exist, abort
@@ -28,7 +35,7 @@ export default async function cleanYarnLock(cwd, repoName) {
     repoName = `@${repoName}`;
   }
 
-  const yarnLockPath = path.join(appRootPath, 'yarn.lock');
+  const yarnLockPath = path.join(projectDir, 'yarn.lock');
   let lockStr;
   try {
     lockStr = (await fs.readFile(yarnLockPath)).toString();
