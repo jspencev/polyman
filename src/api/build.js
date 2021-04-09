@@ -62,7 +62,7 @@ export default async function build(config = {}, cwd) {
     const {repo} = await findRepository(myProjectDir);
     const project = repo.projects[myProjectName];
     let dirHash;
-    if (config.dir_hashes[myProjectName]) {
+    if (config.dir_hashes && config.dir_hashes[myProjectName]) {
       dirHash = config.dir_hashes[myProjectName]
     } else {
       dirHash = await hashDirectory(project.local_path, hashDirFilter);
