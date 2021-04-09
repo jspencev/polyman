@@ -231,7 +231,9 @@ export default async function addRemove(dependencies, type, config = {}, cwd) {
       await writeJSONToFile(repoPath, repo);
     }
 
-    return {pack: myPack, repo};
+    const didRelink = !(depsToRemove.length === 0 && depsToAdd.length === 0 && devDepsToAdd.length === 0);
+
+    return {pack: myPack, repo, didRelink};
   } catch (e) {
     await writeJSONToFile(myPackPath, originalPack);
     throw e;
