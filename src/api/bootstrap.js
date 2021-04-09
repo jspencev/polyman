@@ -1,4 +1,4 @@
-import { findRepository } from '%/util';
+import { findRepository, hashDirectory } from '%/util';
 import { findPackage } from '@jspencev/node-util';
 import build from './build';
 import relink from './relink';
@@ -31,12 +31,13 @@ export default async function bootstrap(config = {}, cwd) {
     toBootstrap.push(pack.name);
   }
 
+  const dirHashes = {};
   for (const projectName of toBootstrap) {
-    await runBootstrap(projectName, repo, config.force);
+    await runBootstrap(projectName, repo, dirHashes, config.force);
   }
 }
 
-async function runBootstrap(projectName, repo, force, dev = true, exclude = [], indent = 0) {
+async function runBootstrap(projectName, repo, dirHashes, force, dev = true, exclude = [], indent = 0) {
   const toExclude = _.union(exclude, [projectName]);
   const project = repo.projects[projectName];
   const {pack} = await findPackage(project.local_path);
@@ -49,7 +50,7 @@ async function runBootstrap(projectName, repo, force, dev = true, exclude = [], 
   }
   _.pullAll(toRun, toExclude);
   for (const name of toRun) {
-    await runBootstrap(name, repo, force, false, toExclude, indent + 1);
+    await runBootstrap(name, repo, dirHashes, force, false, toExclude, indent + 1);
   }
 
   let toExec = [projectName];
@@ -67,11 +68,19 @@ async function runBootstrap(projectName, repo, force, dev = true, exclude = [], 
   for (const name of toExec) {
     console.log(chalk.magenta(`== ${indent}: Bootstrapping ${name}`));
     console.log(chalk.yellow('DO NOT EXIT THIS PROCESS!'));
+
     const localPath = repo.projects[name].local_path;
     console.log(chalk.cyan('cd ' + localPath));
+
     console.log(chalk.cyan('poly relink'));
-    await relink(config, localPath);
+    const {didRelink} = await relink(config, localPath);
+    if (didRelink) {
+      dirHashes[name] = null;
+    }
+
     console.log(chalk.cyan('poly build'));
-    await build(config, localPath);
+    config.dir_hashes = dirHashes;
+    const {didBuild, dirHash} = await build(config, localPath);
+    dirHashes[name] = dirHash;
   }
 }

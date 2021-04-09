@@ -14,7 +14,7 @@ import {
   yarn
 } from '%/util';
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist } from '@jspencev/node-util';
-import { sortObject, pushUnique } from '@jspencev/util';
+import { sortObject, pushUnique, fallback } from '@jspencev/util';
 import pack from './private/pack';
 import _ from 'lodash';
 import path from 'path';
@@ -61,10 +61,15 @@ export default async function build(config = {}, cwd) {
   if (!config.force && sameRepo) {
     const {repo} = await findRepository(myProjectDir);
     const project = repo.projects[myProjectName];
-    const hash = await hashDirectory(project.local_path, hashDirFilter);
-    if (project.dir_hash === hash) {
+    let dirHash;
+    if (config.dir_hashes[myProjectName]) {
+      dirHash = config.dir_hashes[myProjectName]
+    } else {
+      dirHash = await hashDirectory(project.local_path, hashDirFilter);
+    }
+    if (project.dir_hash === dirHash) {
       const tarballPath = await getBuiltTarballPath(myProjectDir);
-      return {didBuild: false, tarballPath};
+      return {didBuild: false, tarballPath, dirHash};
     }
   }
 
@@ -241,19 +246,21 @@ export default async function build(config = {}, cwd) {
   // pack the project
   const builtTarballDir = await getBuiltTarballDir(myProjectDir);
   const tarballPath = await pack(finalPackDir, builtTarballDir);
+  let dirHash;
   if (sameRepo) {
     // generate hashes and write to the repository
     const {repo, repoPath} = await findRepository(myProjectDir);
     const myProject = repo.projects[myProjectName];
     myProject.tarball = tarballPath;
-    myProject.dir_hash = await hashDirectory(repo.projects[myProjectName].local_path, hashDirFilter);
+    dirHash = await hashDirectory(repo.projects[myProjectName].local_path, hashDirFilter);
+    myProject.dir_hash = dirHash;
     repo.projects[myProjectName] = myProject;
     await writeJSONToFile(repoPath, repo);
   }
 
   // cleanup
   await rimraf(myTmpDir);
-  return {didBuild: true, tarballPath};
+  return {didBuild: true, tarballPath, dirHash};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
