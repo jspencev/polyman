@@ -1,5 +1,6 @@
 import path from 'path';
-import { writeJSONToFile, findRepository, getMigrations } from '%/util';
+import { findRepository, getMigrations } from '%/util';
+import { writeJSONToFile } from '@jspencev/node-util';
 import chalk from 'chalk'
 import _ from 'lodash';
 

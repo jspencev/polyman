@@ -17,7 +17,6 @@ import isSameRepo from './isSameRepo'
 import migrate from './migrate';
 import readJSONFile from './readJSONFile';
 import scopify from './scopify';
-import writeJSONToFile from './writeJSONToFile';
 import YARN_CMD from './YARN_CMD';
 import yarn from './yarn';
 
@@ -41,7 +40,6 @@ export {
   migrate,
   readJSONFile,
   scopify,
-  writeJSONToFile,
   YARN_CMD,
   yarn
 }

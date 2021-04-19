@@ -10,10 +10,9 @@ import {
   isSameRepo,
   readJSONFile,
   scopify,
-  writeJSONToFile,
   yarn
 } from '%/util';
-import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist } from '@jspencev/node-util';
+import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist, writeJSONToFile } from '@jspencev/node-util';
 import { sortObject, pushUnique, fallback } from '@jspencev/util';
 import pack from './private/pack';
 import _ from 'lodash';
