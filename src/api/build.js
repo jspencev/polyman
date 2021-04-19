@@ -1,16 +1,5 @@
-import { 
-  copyDirectory,
-  findInMyDependencies,
-  findRepository,
-  getBuiltTarballDir,
-  getBuiltTarballPath,
-  getDependenciesDir,
-  getTmpDir,
-  hashDirectory,
-  isSameRepo,
-  scopify,
-  yarn
-} from '%/util';
+import { copyDirectory, findInMyDependencies, getBuiltTarballDir, getBuiltTarballPath, getDependenciesDir, getTmpDir, hashDirectory, isSameRepo, scopify, yarn } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
 import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist, writeJSONToFile, readJSONFile } from '@jspencev/node-util';
 import { sortObject, pushUnique } from '@jspencev/util';
 import pack from './private/pack';

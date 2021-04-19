@@ -1,8 +1,8 @@
-import { yarn } from '%/util';
 import thenifyAll from 'thenify-all';
 import _fs from 'fs';
 const fs = thenifyAll(_fs);
-import { findRepository, getMigrations } from '%/util';
+import { getMigrations, yarn } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
 import { findPackage, spawnChildProcess, writeJSONToFile, readJSONFile } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
 import add from './add';

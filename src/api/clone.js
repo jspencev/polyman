@@ -1,4 +1,4 @@
-import { findRepository } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
 import { spawnChildProcess, writeFileIfNotExist } from '@jspencev/node-util';
 import path from 'path';
 

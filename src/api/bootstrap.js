@@ -1,4 +1,4 @@
-import { findRepository, hashDirectory } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
 import { findPackage } from '@jspencev/node-util';
 import build from './build';
 import relink from './relink';

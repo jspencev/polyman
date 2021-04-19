@@ -1,4 +1,4 @@
-import { findRepository } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
 import { writeJSONToFile } from '@jspencev/node-util';
 
 export async function repoUp(repoDir) {

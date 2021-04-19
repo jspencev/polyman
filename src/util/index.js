@@ -3,7 +3,6 @@ import copyDirectory from './copyDirectory';
 import deleteFromYarnCache from './deleteFromYarnCache';
 import descopify from './descopify';
 import findInMyDependencies from './findInMyDependencies';
-import findRepository from './findRepository';
 import getBuiltTarballDir from './getBuiltTarballDir';
 import getBuiltTarballPath from './getBuiltTarballPath';
 import getDependenciesDir from './getDependenciesDir';
@@ -25,7 +24,6 @@ export {
   deleteFromYarnCache,
   descopify,
   findInMyDependencies,
-  findRepository,
   getBuiltTarballDir,
   getBuiltTarballPath,
   getDependenciesDir,
