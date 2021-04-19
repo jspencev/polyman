@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
-import { migrate, getMigrations, findRepository } from '%/util';
-import path from 'path';
+import { migrate, getMigrations } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
 
 (async function() {
   let questions = [{

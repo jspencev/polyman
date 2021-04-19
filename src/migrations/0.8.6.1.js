@@ -1,4 +1,6 @@
-import { findRepository, writeJSONToFile, readJSONFile, isSameRepo } from '%/util';
+import { isSameRepo } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
+import { writeJSONToFile, readJSONFile } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
 import path from 'path';
 

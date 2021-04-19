@@ -1,5 +1,5 @@
-import { findRepository, writeJSONToFile } from '%/util';
-import { findPackage } from '@jspencev/node-util';
+import { findRepository } from '@jspencev/polyman-util'
+import { findPackage, writeJSONToFile } from '@jspencev/node-util';
 import { isOneOf, fallback } from '@jspencev/util';
 import add from './add';
 import remove from './remove';

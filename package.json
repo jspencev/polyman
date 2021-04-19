@@ -60,6 +60,7 @@
   },
   "localDependencies": [
     "node-util",
+    "polyman-util",
     "util"
   ],
   "localDevDependencies": [

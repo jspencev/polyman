@@ -1,5 +1,7 @@
 import path from 'path';
-import { writeJSONToFile, findRepository, getMigrations } from '%/util';
+import { getMigrations } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
+import { writeJSONToFile } from '@jspencev/node-util';
 import chalk from 'chalk'
 import _ from 'lodash';
 

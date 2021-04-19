@@ -1,5 +1,4 @@
-import { getAppRootPath, writeFileIfNotExist } from '@jspencev/node-util';
-import { readJSONFile } from '%/util';
+import { getAppRootPath, writeFileIfNotExist, readJSONFile } from '@jspencev/node-util';
 import * as lockfile from '@yarnpkg/lockfile';
 import path from 'path';
 import thenifyAll from 'thenify-all';

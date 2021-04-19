@@ -1,5 +1,6 @@
-import { findRepository, isSameRepo, writeJSONToFile, getMigrations, readJSONFile } from '%/util';
-import { getAppRootPath, findPackage } from '@jspencev/node-util';
+import { isSameRepo, getMigrations } from '%/util';
+import { findRepository } from '@jspencev/polyman-util'
+import { getAppRootPath, findPackage, writeJSONToFile, readJSONFile } from '@jspencev/node-util';
 import path from 'path';
 import _ from 'lodash';
 import chalk from 'chalk';
