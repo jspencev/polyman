@@ -8,12 +8,11 @@ import {
   getTmpDir,
   hashDirectory,
   isSameRepo,
-  readJSONFile,
   scopify,
   yarn
 } from '%/util';
-import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist, writeJSONToFile } from '@jspencev/node-util';
-import { sortObject, pushUnique, fallback } from '@jspencev/util';
+import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist, writeJSONToFile, readJSONFile } from '@jspencev/node-util';
+import { sortObject, pushUnique } from '@jspencev/util';
 import pack from './private/pack';
 import _ from 'lodash';
 import path from 'path';

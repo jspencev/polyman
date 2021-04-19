@@ -1,5 +1,5 @@
-import { findRepository, readJSONFile, isSameRepo } from '%/util';
-import { writeJSONToFile } from '@jspencev/node-util';
+import { findRepository, isSameRepo } from '%/util';
+import { writeJSONToFile, readJSONFile } from '@jspencev/node-util';
 import { sortObject } from '@jspencev/util';
 import path from 'path';
 

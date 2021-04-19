@@ -1,6 +1,6 @@
-import { deleteFromYarnCache, yarn, cleanYarnLock, readJSONFile, YARN_CMD } from '%/util';
+import { deleteFromYarnCache, yarn, cleanYarnLock, YARN_CMD } from '%/util';
 import { build } from '%/api';
-import { getAppRootPath, spawnChildProcess } from '@jspencev/node-util';
+import { getAppRootPath, spawnChildProcess, readJSONFile } from '@jspencev/node-util';
 import path from 'path';
 
 let repoName;

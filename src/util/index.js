@@ -15,7 +15,6 @@ import hashFile from './hashFile';
 import isRepoProject from './isRepoProject';
 import isSameRepo from './isSameRepo'
 import migrate from './migrate';
-import readJSONFile from './readJSONFile';
 import scopify from './scopify';
 import YARN_CMD from './YARN_CMD';
 import yarn from './yarn';
@@ -38,7 +37,6 @@ export {
   isRepoProject,
   isSameRepo,
   migrate,
-  readJSONFile,
   scopify,
   YARN_CMD,
   yarn

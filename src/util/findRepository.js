@@ -1,5 +1,4 @@
-import { findFileUpPath } from '@jspencev/node-util';
-import { readJSONFile } from '%/util';
+import { findFileUpPath, readJSONFile } from '@jspencev/node-util';
 
 export default async function findRepository(cwd) {
   const filePath = await findFileUpPath('repository.poly', cwd);

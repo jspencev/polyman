@@ -1,4 +1,5 @@
-import { findRepository, readJSONFile } from '%/util';
+import { findRepository } from '%/util';
+import { readJSONFile } from '@jspencev/node-util';
 import path from 'path';
 
 /**
