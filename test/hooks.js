@@ -1,26 +1,16 @@
-import { hooks } from '@jspencev/test-util';
+import { hooks } from "@jspencev/test-util";
 const { beforeEachHooks, afterEachHooks, afterHooks } = hooks;
 const { initTestVars } = beforeEachHooks;
 const { rewireResetAll, cleanTestVars, sinonRestore } = afterEachHooks;
 const { exitProcess } = afterHooks;
 
 export default {
-  before: [
-    initTestVars
-  ],
+  before: [initTestVars],
   beforeEach: {
-    pre: [
-      initTestVars
-    ]
+    pre: [initTestVars],
   },
   afterEach: {
-    post: [
-      sinonRestore,
-      rewireResetAll,
-      cleanTestVars
-    ]
+    post: [sinonRestore, rewireResetAll, cleanTestVars],
   },
-  after: [
-    exitProcess
-  ]
-}
+  after: [exitProcess],
+};

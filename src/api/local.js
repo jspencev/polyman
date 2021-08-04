@@ -1,31 +1,33 @@
-import { findRepository } from '@jspencev/polyman-util'
-import { findPackage, writeJSONToFile } from '@jspencev/node-util';
-import { isOneOf, fallback } from '@jspencev/util';
-import add from './add';
-import remove from './remove';
-import _ from 'lodash';
+import { findRepository } from "@jspencev/polyman-util";
+import { findPackage, writeJSONToFile } from "@jspencev/node-util";
+import { isOneOf, fallback } from "@jspencev/util";
+import add from "./add";
+import remove from "./remove";
+import _ from "lodash";
 
 export default async function local(projects, nextCmd, config = {}, cwd) {
-  if (!isOneOf(nextCmd, 'add', 'remove')) {
+  if (!isOneOf(nextCmd, "add", "remove")) {
     throw Error('nextCmd must be one of "add" or "remove"');
   }
 
-  let {repo, repoPath} = await findRepository(cwd);
+  let { repo, repoPath } = await findRepository(cwd);
   const myPackage = await findPackage(cwd);
   const myName = myPackage.pack.name;
   const toStrip = [];
   for (const projectName of projects) {
-    const project = repo.projects[projectName]
+    const project = repo.projects[projectName];
     if (!project) {
-      throw Error( `Project "${projectName}" is not a project in this polyrepo`);
+      throw Error(`Project "${projectName}" is not a project in this polyrepo`);
     }
-  
+
     if (!project.local_path && !project.git_repository) {
-      throw Error(`Project is not local and does not have a git repository. The project must have at least one.`);
+      throw Error(
+        `Project is not local and does not have a git repository. The project must have at least one.`
+      );
     }
-  
+
     if (!project.local_path) {
-      throw Error('Cloning from git repository is not yet supported.');
+      throw Error("Cloning from git repository is not yet supported.");
     }
 
     if (project.npm && repo.projects[myName].dependencies[project.npm]) {
@@ -34,7 +36,7 @@ export default async function local(projects, nextCmd, config = {}, cwd) {
   }
 
   if (toStrip.length > 0) {
-    console.log(`Stripping ${toStrip.join(' ')}...`);
+    console.log(`Stripping ${toStrip.join(" ")}...`);
     try {
       config.local = false;
       await remove(toStrip, config, cwd);
@@ -46,8 +48,8 @@ export default async function local(projects, nextCmd, config = {}, cwd) {
     config.dev = true;
   }
 
-  if (nextCmd === 'add') {
-    ({repo} = await add(projects, config, cwd));
+  if (nextCmd === "add") {
+    ({ repo } = await add(projects, config, cwd));
     if (config.build) {
       const buildDeps = fallback(repo.projects[myName].build_dependencies, []);
       for (const projectName of projects) {
@@ -60,7 +62,7 @@ export default async function local(projects, nextCmd, config = {}, cwd) {
       await writeJSONToFile(repoPath, repo);
     }
   } else {
-    ({repo} = await remove(projects, config, cwd));
+    ({ repo } = await remove(projects, config, cwd));
     _.pullAll(repo.projects[myName].build_dependencies, projects);
     await writeJSONToFile(repoPath, repo);
   }

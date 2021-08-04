@@ -1,10 +1,14 @@
-import { getAppRootPath, writeFileIfNotExist, readJSONFile } from '@jspencev/node-util';
-import * as lockfile from '@yarnpkg/lockfile';
-import path from 'path';
-import thenifyAll from 'thenify-all';
-import _fs from 'fs';
+import {
+  getAppRootPath,
+  writeFileIfNotExist,
+  readJSONFile,
+} from "@jspencev/node-util";
+import * as lockfile from "@yarnpkg/lockfile";
+import path from "path";
+import thenifyAll from "thenify-all";
+import _fs from "fs";
 const fs = thenifyAll(_fs);
-import eol from 'eol';
+import eol from "eol";
 
 /**
  * Deletes all @<REPO> references from the yarn lock file.
@@ -19,10 +23,12 @@ export default async function cleanYarnLock(cwd, repoName) {
     // package does not exist, abort
     return;
   }
-  
+
   if (!repoName) {
     try {
-      const polyConfig = await readJSONFile(path.join(projectDir, 'config.poly'));
+      const polyConfig = await readJSONFile(
+        path.join(projectDir, "config.poly")
+      );
       repoName = polyConfig.repository_name;
     } catch (e) {
       // poly.config does not exist, abort
@@ -30,11 +36,11 @@ export default async function cleanYarnLock(cwd, repoName) {
     }
   }
 
-  if (repoName.charAt(0) !== '@') {
+  if (repoName.charAt(0) !== "@") {
     repoName = `@${repoName}`;
   }
 
-  const yarnLockPath = path.join(projectDir, 'yarn.lock');
+  const yarnLockPath = path.join(projectDir, "yarn.lock");
   let lockStr;
   try {
     lockStr = (await fs.readFile(yarnLockPath)).toString();
@@ -44,7 +50,7 @@ export default async function cleanYarnLock(cwd, repoName) {
   }
 
   lockStr = eol.lf(lockStr);
-  const lock = lockfile.parse(lockStr)
+  const lock = lockfile.parse(lockStr);
   const yarnLock = lock.object;
   let startedRepo = false;
   for (const rule in yarnLock) {
@@ -52,7 +58,7 @@ export default async function cleanYarnLock(cwd, repoName) {
       startedRepo = true;
       delete yarnLock[rule];
     } else {
-      if (startedRepo || !rule.startsWith('@')) {
+      if (startedRepo || !rule.startsWith("@")) {
         break;
       }
     }

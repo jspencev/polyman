@@ -1,7 +1,7 @@
-import { spawnChildProcess } from '@jspencev/node-util';
-import deleteFromYarnCache from './deleteFromYarnCache';
-import cleanYarnLock from './cleanYarnLock';
-import YARN_CMD from './YARN_CMD';
+import { spawnChildProcess } from "@jspencev/node-util";
+import deleteFromYarnCache from "./deleteFromYarnCache";
+import cleanYarnLock from "./cleanYarnLock";
+import YARN_CMD from "./YARN_CMD";
 
 /**
  * Helper method for launching a yarn process.
@@ -12,15 +12,15 @@ export default async function yarn(command, cwd = process.cwd()) {
   await deleteFromYarnCache(null, cwd);
   await cleanYarnLock(cwd);
 
-  if (typeof command === 'string') {
-    command = command.split(' ');
+  if (typeof command === "string") {
+    command = command.split(" ");
   }
-  if (command[0] === 'yarn') {
+  if (command[0] === "yarn") {
     command.shift();
   }
 
-  const {code, signal} = await spawnChildProcess(YARN_CMD, command, {
-    cwd: cwd
+  const { code, signal } = await spawnChildProcess(YARN_CMD, command, {
+    cwd: cwd,
   });
 
   await deleteFromYarnCache(null, cwd);

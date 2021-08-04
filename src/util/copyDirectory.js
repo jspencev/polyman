@@ -1,16 +1,16 @@
-import { moveFile, isFile } from '@jspencev/node-util';
-import path from 'path';
-import thenify from 'thenify';
-import _glob from 'glob';
+import { moveFile, isFile } from "@jspencev/node-util";
+import path from "path";
+import thenify from "thenify";
+import _glob from "glob";
 const glob = thenify(_glob);
 
 export default async function copyDirectory(from, to, filter) {
-  const globPattern = path.join(from, '**', '*');
+  const globPattern = path.join(from, "**", "*");
   let filesToCopy;
   if (filter) {
-    if (typeof filter === 'function') {
+    if (typeof filter === "function") {
       const res = await glob(globPattern, {
-        dot: true
+        dot: true,
       });
       filesToCopy = [];
       for (const filepath of res) {
@@ -23,7 +23,7 @@ export default async function copyDirectory(from, to, filter) {
     }
   } else {
     filesToCopy = await glob(globPattern, {
-      dot: true
+      dot: true,
     });
   }
 

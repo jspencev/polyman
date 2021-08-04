@@ -1,6 +1,6 @@
-import path from 'path';
+import path from "path";
 
-const DEFAULT = './.poly/tmp';
+const DEFAULT = "./.poly/tmp";
 
 /**
  * Gets the temporary directory for a given project directory

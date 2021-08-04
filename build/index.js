@@ -1,7 +1,5 @@
-import build from './build';
+import build from "./build";
 
 export default build;
 
-export {
-  build
-};
+export { build };

@@ -13,22 +13,10 @@
 /tmp2.js
 /yarn-error.log
 
-# These rules apply just to .npmignore:
-/.vscode
-/build
-/src
-/test
+# These rules apply just to .prettierignore:
 /.commonignore
-/.envrc
 /.gitignore
-/.nvmrc
 /.prettierignore
-/.prettierrc.json
-/addGlobal.js
-/alias.config.js
-/babel.config.js
-/commitlint.config.js
-/config.poly
-/jsconfig.json
-/migrate.js
+/dist
+/test/tmp
 /yarn.lock

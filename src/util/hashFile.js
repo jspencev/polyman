@@ -1,9 +1,9 @@
-import hasha from 'hasha';
+import hasha from "hasha";
 
 export default async function hashFile(filepath) {
   const options = {
-    encoding: 'base64',
-    algorithm: 'md5'
+    encoding: "base64",
+    algorithm: "md5",
   };
 
   const hash = await hasha.fromFile(filepath, options);

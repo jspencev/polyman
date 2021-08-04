@@ -1,8 +1,8 @@
-import { getDependenciesDir } from '%/util';
-import thenify from 'thenify';
-import _glob from 'glob';
+import { getDependenciesDir } from "%/util";
+import thenify from "thenify";
+import _glob from "glob";
 const glob = thenify(_glob);
-import path from 'path';
+import path from "path";
 
 /**
  * Finds the local dependency tarball in the given project directory's dependency directory.
@@ -19,7 +19,9 @@ export default async function findInMyDependencies(projectDir, localDep) {
     if (tarballs.length == 0) {
       throw Error(`Cannot find a tarball for "${localDep}" in ${depDir}`);
     } else {
-      throw Error(`"${localDep}" has multiple dependency tarballs in ${depDir}. Make sure there is only one tarball per dependency.`);
+      throw Error(
+        `"${localDep}" has multiple dependency tarballs in ${depDir}. Make sure there is only one tarball per dependency.`
+      );
     }
   }
 

@@ -1,5 +1,5 @@
-import { getBuiltTarballDir, getTarballFilename } from '%/util';
-import path from 'path';
+import { getBuiltTarballDir, getTarballFilename } from "%/util";
+import path from "path";
 
 /**
  * Gets the absolute built tarball path for the project in the directory submitted.

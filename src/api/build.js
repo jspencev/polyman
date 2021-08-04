@@ -1,34 +1,54 @@
-import { copyDirectory, findInMyDependencies, getBuiltTarballDir, getBuiltTarballPath, getDependenciesDir, getTmpDir, hashDirectory, isSameRepo, scopify, yarn } from '%/util';
-import { findRepository } from '@jspencev/polyman-util'
-import { findPackage, getAppRootPath, writeFileIfNotExist, randomString, isFile, mkdirIfNotExist, writeJSONToFile, readJSONFile } from '@jspencev/node-util';
-import { sortObject, pushUnique } from '@jspencev/util';
-import pack from './private/pack';
-import _ from 'lodash';
-import path from 'path';
-import semver from 'semver';
-import thenify from 'thenify';
-import _rimraf from 'rimraf';
+import {
+  copyDirectory,
+  findInMyDependencies,
+  getBuiltTarballDir,
+  getBuiltTarballPath,
+  getDependenciesDir,
+  getTmpDir,
+  hashDirectory,
+  isSameRepo,
+  scopify,
+  yarn,
+} from "%/util";
+import { findRepository } from "@jspencev/polyman-util";
+import {
+  findPackage,
+  getAppRootPath,
+  writeFileIfNotExist,
+  randomString,
+  isFile,
+  mkdirIfNotExist,
+  writeJSONToFile,
+  readJSONFile,
+} from "@jspencev/node-util";
+import { sortObject, pushUnique } from "@jspencev/util";
+import pack from "./private/pack";
+import _ from "lodash";
+import path from "path";
+import semver from "semver";
+import thenify from "thenify";
+import _rimraf from "rimraf";
 const rimraf = thenify(_rimraf);
-import _glob from 'glob';
+import _glob from "glob";
 const glob = thenify(_glob);
-import thenifyAll from 'thenify-all';
-import _fs from 'fs';
+import thenifyAll from "thenify-all";
+import _fs from "fs";
 const fs = thenifyAll(_fs);
-import ignore from 'ignore';
-import babelDir from '@babel/cli/lib/babel/dir';
-import tar from 'tar';
-import chalk from 'chalk';
-import { intersect as rangeIntersect } from 'semver-range-intersect';
+import ignore from "ignore";
+import babelDir from "@babel/cli/lib/babel/dir";
+import tar from "tar";
+import chalk from "chalk";
+import { intersect as rangeIntersect } from "semver-range-intersect";
 
-const LOCALS_DIR = '.poly_lib';
+const LOCALS_DIR = ".poly_lib";
 const DEFAULT_EXTENSIONS = [".js", ".jsx", ".es6", ".es", ".mjs", "cjs"];
 
 export default async function build(config = {}, cwd) {
   // get the project dir and package
   const myProjectDir = await getAppRootPath(cwd);
-  const {pack: myPack} = await findPackage(myProjectDir);
+  const { pack: myPack } = await findPackage(myProjectDir);
   const myProjectName = myPack.name;
-  
+
   const myDepsDir = getDependenciesDir(myProjectDir);
   const toFilterOut = [];
   for (const dep of myPack.localDevDependencies) {
@@ -43,20 +63,20 @@ export default async function build(config = {}, cwd) {
     return true;
   }
 
-  const {sameRepo, repoName} = await isSameRepo(myProjectDir);
+  const { sameRepo, repoName } = await isSameRepo(myProjectDir);
 
   if (!config.force && sameRepo) {
-    const {repo} = await findRepository(myProjectDir);
+    const { repo } = await findRepository(myProjectDir);
     const project = repo.projects[myProjectName];
     let dirHash;
     if (config.dir_hashes && config.dir_hashes[myProjectName]) {
-      dirHash = config.dir_hashes[myProjectName]
+      dirHash = config.dir_hashes[myProjectName];
     } else {
       dirHash = await hashDirectory(project.local_path, hashDirFilter);
     }
     if (project.dir_hash === dirHash) {
       const tarballPath = await getBuiltTarballPath(myProjectDir);
-      return {didBuild: false, tarballPath, dirHash};
+      return { didBuild: false, tarballPath, dirHash };
     }
   }
 
@@ -77,11 +97,11 @@ export default async function build(config = {}, cwd) {
     await mkdirIfNotExist(dirBase);
     await tar.extract({
       file: tarballFile,
-      cwd: dirBase
+      cwd: dirBase,
     });
 
-    const tmpDir = path.join(dirBase, 'package');
-    const pack = await readJSONFile(path.join(tmpDir, 'package.json'));
+    const tmpDir = path.join(dirBase, "package");
+    const pack = await readJSONFile(path.join(tmpDir, "package.json"));
     extractDepVersions(pack, versions);
     if (pack.bin) {
       for (const scriptName in pack.bin) {
@@ -92,13 +112,13 @@ export default async function build(config = {}, cwd) {
     }
 
     const scopedName = scopify(dep, repoName);
-    const localDir = path.join(tmpPackDir, '.poly_lib', scopedName);
+    const localDir = path.join(tmpPackDir, ".poly_lib", scopedName);
 
     localDeps.push({
       name: dep,
       scoped_name: scopedName,
       tmp_dir: tmpDir,
-      local_dir: localDir
+      local_dir: localDir,
     });
   }
 
@@ -106,7 +126,9 @@ export default async function build(config = {}, cwd) {
   let newDeps = {};
   for (const dep in versions) {
     const version = versions[dep];
-    const err = Error(`There's a version conflict between your local packages. Dependency: ${dep} Versions: ${version.ranges}`);
+    const err = Error(
+      `There's a version conflict between your local packages. Dependency: ${dep} Versions: ${version.ranges}`
+    );
     if (version.semver) {
       const intersection = rangeIntersect(...version.ranges);
       if (intersection === null) {
@@ -122,53 +144,60 @@ export default async function build(config = {}, cwd) {
   }
 
   // add corejs 3 to the project if it's not already there
-  if (!newDeps['core-js']) {
-    newDeps['core-js'] = '3';
+  if (!newDeps["core-js"]) {
+    newDeps["core-js"] = "3";
   }
 
   newDeps = sortObject(newDeps);
 
   // call the yarn build script if exists
   if (myPack.scripts.build) {
-    await yarn('build', myProjectDir);
+    await yarn("build", myProjectDir);
   }
 
-  console.log(chalk.magenta('Prepping production package'));
+  console.log(chalk.magenta("Prepping production package"));
 
   // get the npmignore (fallback to gitignore)
   let npmignore;
   try {
-    npmignore = await fs.readFile(path.resolve(myProjectDir, '.npmignore'));
+    npmignore = await fs.readFile(path.resolve(myProjectDir, ".npmignore"));
   } catch (e) {
-    console.log(`.npmignore not found for local project in "${myProjectDir}". Falling back to .gitignore`);
-    npmignore = await fs.readFile(path.resolve(myProjectDir, '.gitignore'));
+    console.log(
+      `.npmignore not found for local project in "${myProjectDir}". Falling back to .gitignore`
+    );
+    npmignore = await fs.readFile(path.resolve(myProjectDir, ".gitignore"));
   }
   npmignore = npmignore.toString();
   npmignore = ignore().add(npmignore);
 
   // copy all unignored files into the tmp build directory
-  await copyDirectory(myProjectDir, tmpPackDir, async function(file) {
+  await copyDirectory(myProjectDir, tmpPackDir, async function (file) {
     file = path.relative(myProjectDir, file);
-    const shouldSkip = (npmignore.ignores(file) || file.includes('.git'));
+    const shouldSkip = npmignore.ignores(file) || file.includes(".git");
     return !shouldSkip;
   });
 
   // get the package.json in the temporary build directory and write new data
-  const {pack: myTmpPack, packPath: myTmpPackPath} = await findPackage(tmpPackDir);
+  const { pack: myTmpPack, packPath: myTmpPackPath } = await findPackage(
+    tmpPackDir
+  );
   myTmpPack.dependencies = newDeps;
   myTmpPack.bin = Object.assign(binScripts, myTmpPack.bin);
   await writeJSONToFile(myTmpPackPath, myTmpPack);
 
   // rewrite the files to point @repo/project to .poly_lib
-  const filesToReconfigure = await glob(path.join(tmpPackDir, '**', '*.*'), {
-    dot: true
+  const filesToReconfigure = await glob(path.join(tmpPackDir, "**", "*.*"), {
+    dot: true,
   });
   for (const file of filesToReconfigure) {
     if (DEFAULT_EXTENSIONS.includes(path.parse(file).ext)) {
       let code = (await fs.readFile(file)).toString();
       for (const localDep of localDeps) {
         const relPath = path.relative(path.parse(file).dir, localDep.local_dir);
-        const reg = new RegExp(localDep.scoped_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        const reg = new RegExp(
+          localDep.scoped_name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          "g"
+        );
         code = code.replace(reg, relPath);
       }
       await writeFileIfNotExist(file, code);
@@ -183,13 +212,13 @@ export default async function build(config = {}, cwd) {
   // write a babel config to transform the code
   const babelConfig = {
     presets: [],
-    plugins: []
+    plugins: [],
   };
 
-  const nvmrcPath = path.join(myProjectDir, '.nvmrc');
+  const nvmrcPath = path.join(myProjectDir, ".nvmrc");
   const presetEnv = {
-    useBuiltIns: 'usage',
-    corejs: 3
+    useBuiltIns: "usage",
+    corejs: 3,
   };
   let nodeVersion;
   if (await isFile(nvmrcPath)) {
@@ -198,22 +227,23 @@ export default async function build(config = {}, cwd) {
   }
   if (nodeVersion) {
     presetEnv.targets = {
-      node: nodeVersion
-    }
+      node: nodeVersion,
+    };
   }
 
   babelConfig.presets.push([
-    await findModuleAbsolutePath('@babel/preset-env'),
-    presetEnv
+    await findModuleAbsolutePath("@babel/preset-env"),
+    presetEnv,
   ]);
 
   babelConfig.plugins.push([
-    await findModuleAbsolutePath('babel-plugin-minify-dead-code-elimination'), {
+    await findModuleAbsolutePath("babel-plugin-minify-dead-code-elimination"),
+    {
       keepFnName: true,
       keepClassName: true,
       keepFsArgs: true,
-      tdz: true
-    }
+      tdz: true,
+    },
   ]);
 
   // transform the code into a new temporary directory
@@ -226,8 +256,8 @@ export default async function build(config = {}, cwd) {
       filenames: [tmpPackDir],
       outDir: finalPackDir,
       copyFiles: true,
-      copyIgnored: true
-    }
+      copyIgnored: true,
+    },
   });
 
   // pack the project
@@ -236,10 +266,13 @@ export default async function build(config = {}, cwd) {
   let dirHash;
   if (sameRepo) {
     // generate hashes and write to the repository
-    const {repo, repoPath} = await findRepository(myProjectDir);
+    const { repo, repoPath } = await findRepository(myProjectDir);
     const myProject = repo.projects[myProjectName];
     myProject.tarball = tarballPath;
-    dirHash = await hashDirectory(repo.projects[myProjectName].local_path, hashDirFilter);
+    dirHash = await hashDirectory(
+      repo.projects[myProjectName].local_path,
+      hashDirFilter
+    );
     myProject.dir_hash = dirHash;
     repo.projects[myProjectName] = myProject;
     await writeJSONToFile(repoPath, repo);
@@ -247,7 +280,7 @@ export default async function build(config = {}, cwd) {
 
   // cleanup
   await rimraf(myTmpDir);
-  return {didBuild: true, tarballPath, dirHash};
+  return { didBuild: true, tarballPath, dirHash };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -257,7 +290,7 @@ function extractDepVersions(pack, versions = {}) {
     if (!versions[dep]) {
       versions[dep] = {
         semver: true,
-        ranges: []
+        ranges: [],
       };
     }
 
@@ -274,18 +307,18 @@ function extractDepVersions(pack, versions = {}) {
 
 async function findModuleAbsolutePath(mod) {
   const parsed = path.parse(__dirname);
-  const root = parsed.root
+  const root = parsed.root;
   let dirs = parsed.dir.slice(root.length);
   dirs = dirs.split(path.sep);
   while (dirs.length > 0) {
     let modDir;
-    if (mod.charAt(0) === '@') {
-      modDir = mod.split('/');
+    if (mod.charAt(0) === "@") {
+      modDir = mod.split("/");
     } else {
       modDir = [mod];
     }
-    const modPath = root + path.join(...dirs, 'node_modules', ...modDir);
-    const check = root + path.join(modPath, 'package.json');
+    const modPath = root + path.join(...dirs, "node_modules", ...modDir);
+    const check = root + path.join(modPath, "package.json");
     if (await isFile(check)) {
       return modPath;
     }
@@ -293,5 +326,5 @@ async function findModuleAbsolutePath(mod) {
     dirs.pop();
   }
 
-  throw Error('Module could not be found.');
+  throw Error("Module could not be found.");
 }

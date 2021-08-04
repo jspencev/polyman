@@ -22,6 +22,8 @@
 /.envrc
 /.gitignore
 /.nvmrc
+/.prettierignore
+/.prettierrc.json
 /addGlobal.js
 /alias.config.js
 /babel.config.js
@@ -29,4 +31,12 @@
 /config.poly
 /jsconfig.json
 /migrate.js
+/yarn.lock
+
+#! .prettierignore
+/.commonignore
+/.gitignore
+/.prettierignore
+/dist
+/test/tmp
 /yarn.lock

@@ -1,18 +1,18 @@
-const path = require('path');
+const path = require("path");
 
-let rootDir = 'src';
+let rootDir = "src";
 if (process.env.BUILD) {
-  rootDir = 'dist';
+  rootDir = "dist";
 }
 
 function alias(p) {
-  return './' + path.join(rootDir, p);
+  return "./" + path.join(rootDir, p);
 }
 
 module.exports = {
   default: {
-    '%root': alias('..'),
-    '%': alias('.')
+    "%root": alias(".."),
+    "%": alias("."),
   },
-  appRoot: __dirname
-}
+  appRoot: __dirname,
+};

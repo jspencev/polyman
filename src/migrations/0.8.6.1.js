@@ -1,8 +1,8 @@
-import { isSameRepo } from '%/util';
-import { findRepository } from '@jspencev/polyman-util'
-import { writeJSONToFile, readJSONFile } from '@jspencev/node-util';
-import { sortObject } from '@jspencev/util';
-import path from 'path';
+import { isSameRepo } from "%/util";
+import { findRepository } from "@jspencev/polyman-util";
+import { writeJSONToFile, readJSONFile } from "@jspencev/node-util";
+import { sortObject } from "@jspencev/util";
+import path from "path";
 
 export async function repoUp(repoDir) {
   return true;
@@ -13,22 +13,22 @@ export async function repoDown(repoDir) {
 }
 
 export async function projectUp(projectDir) {
-  const {sameRepo} = await isSameRepo(projectDir);
+  const { sameRepo } = await isSameRepo(projectDir);
   if (!sameRepo) {
     return false;
   }
 
-  const {repo} = await findRepository(projectDir);
-  const polyConfigFile = path.join(projectDir, 'config.poly');
+  const { repo } = await findRepository(projectDir);
+  const polyConfigFile = path.join(projectDir, "config.poly");
   let polyConfig;
   try {
     polyConfig = await readJSONFile(polyConfigFile);
   } catch (e) {
     polyConfig = {
-      babel: false
+      babel: false,
     };
   }
-  polyConfig.version = 'foo';
+  polyConfig.version = "foo";
   polyConfig.repository_name = repo.name;
   polyConfig = sortObject(polyConfig);
   await writeJSONToFile(polyConfigFile, polyConfig);
@@ -37,12 +37,12 @@ export async function projectUp(projectDir) {
 }
 
 export async function projectDown(projectDir) {
-  const {sameRepo} = await isSameRepo(projectDir);
+  const { sameRepo } = await isSameRepo(projectDir);
   if (!sameRepo) {
     return false;
   }
 
-  const polyConfigFile = path.join(projectDir, 'config.poly');
+  const polyConfigFile = path.join(projectDir, "config.poly");
   const polyConfig = await readJSONFile(polyConfigFile);
   delete polyConfig.version;
   delete polyConfig.repository_name;

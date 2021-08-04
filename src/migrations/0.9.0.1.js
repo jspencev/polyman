@@ -1,8 +1,8 @@
-import { findRepository } from '@jspencev/polyman-util'
-import { writeJSONToFile } from '@jspencev/node-util';
+import { findRepository } from "@jspencev/polyman-util";
+import { writeJSONToFile } from "@jspencev/node-util";
 
 export async function repoUp(repoDir) {
-  const {repo, repoPath} = await findRepository(repoDir);
+  const { repo, repoPath } = await findRepository(repoDir);
   for (const projectName in repo.projects) {
     const project = repo.projects[projectName];
     delete project.tarball_hash;
@@ -15,10 +15,10 @@ export async function repoUp(repoDir) {
 }
 
 export async function repoDown(repoDir) {
-  const {repo, repoPath} = await findRepository(repoDir);
+  const { repo, repoPath } = await findRepository(repoDir);
   for (const projectName in repo.projects) {
     const project = repo.projects[projectName];
-    project.tarball_hash = 'init';
+    project.tarball_hash = "init";
     repo.projects[projectName] = project;
   }
 

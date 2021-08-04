@@ -1,10 +1,10 @@
-import { yarn } from '%/util'
-import { relink } from '%/api';
+import { yarn } from "%/util";
+import { relink } from "%/api";
 
 export default async function install(config, cwd) {
-  const yarnCmd = ['install'];
+  const yarnCmd = ["install"];
   if (config.production) {
-    yarnCmd.push('--production');
+    yarnCmd.push("--production");
   }
   await yarn(yarnCmd, cwd);
 

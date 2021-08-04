@@ -1,7 +1,7 @@
-import { getAppRootPath } from '@jspencev/node-util';
-import path from 'path';
+import { getAppRootPath } from "@jspencev/node-util";
+import path from "path";
 
-const DEFAULT_BUILT_DIR = './.poly/build';
+const DEFAULT_BUILT_DIR = "./.poly/build";
 
 /**
  * Gets the directory of tarballs built with polyman.
