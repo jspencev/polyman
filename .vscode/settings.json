@@ -4,7 +4,8 @@
   "files.associations": {
     ".commonignore": "ignore",
     ".lintstagedrc": "json",
-    ".prettierignore": "ignore"
+    ".prettierignore": "ignore",
+    "config.poly": "json"
   },
   "[javascript]": {
     "editor.tabSize": 2

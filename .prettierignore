@@ -15,7 +15,10 @@
 
 # These rules apply just to .prettierignore:
 /.commonignore
+/.envrc
 /.gitignore
+/.npmignore
+/.nvmrc
 /.prettierignore
 /dist
 /test/tmp

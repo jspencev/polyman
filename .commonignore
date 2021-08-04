@@ -35,7 +35,10 @@
 
 #! .prettierignore
 /.commonignore
+/.envrc
 /.gitignore
+/.npmignore
+/.nvmrc
 /.prettierignore
 /dist
 /test/tmp
